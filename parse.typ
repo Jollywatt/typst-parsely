@@ -5,41 +5,63 @@
   repr(it.func()) == "space"
 }
 
+#let sequence-children(it) = {
+  if type(it) == content and repr(it.func()) == "sequence" {
+    it.children
+  } else {
+    (it,)
+  }
+}
+
 #let squeeze-space(seq) = seq.filter(it => not is-space(it))
 
 
 #let parse(it, grammar) = {
 
-  let parse-op(tokens) = {
-    for (name, spec) in grammar {
-      let pattern = spec.values().first()
-      pattern = pattern.body
-
-      if repr(pattern.func()) == "sequence" {
-        pattern = pattern.children
-      } else {
-        pattern = (pattern,)
-      }
-
-      let n-ahead = pattern.len()
-      if n-ahead > tokens.len() { continue }
-
-      let m = match(pattern, tokens.slice(0, n-ahead))
-      if m == false { continue }
-
-      let op = (
-        kind: spec.keys().first(),
-        name: name,
-        ..if "prec" in spec { (prec: spec.prec) },
-        slots: m,
-      )
-      return (op, tokens.slice(n-ahead))
-    }
-
-    (none, tokens)
-  }
 
   let parse-expr(tokens, min-prec) = {
+
+    let parse-op(tokens) = {
+      for (name, spec) in grammar {
+        let pattern = spec.values().first()
+        pattern = pattern.body
+
+        if repr(pattern.func()) == "sequence" {
+          pattern = pattern.children
+        } else {
+          pattern = (pattern,)
+        }
+
+        let n-ahead = pattern.len()
+        if n-ahead > tokens.len() { continue }
+        let slice = tokens.slice(0, n-ahead)
+
+        let m = match(pattern, slice)
+        if m == false { continue }
+
+        let slots = m.pairs().map(((slot-name, expr)) => {
+          let seq = sequence-children(expr)
+          let (tree, rest) = parse-expr(seq, 0)
+          if rest.len() > 0 {
+            // panic("failed to parse")
+            return (slot-name, expr)
+          }
+          (slot-name, tree)
+        }).to-dict()
+
+        let op = (
+          kind: spec.keys().first(),
+          name: name,
+          ..if "prec" in spec { (prec: spec.prec) },
+          slots: slots,
+        )
+        return (op, tokens.slice(n-ahead))
+      }
+
+      (none, tokens)
+    }
+
+
     tokens = squeeze-space(tokens)
     let left = none
     
@@ -89,33 +111,30 @@
 
 
 #let grammar = (
+  assert: (prefix: $tack$, prec: 0),
   eq: (infix: $=$, prec: 0),
   dot: (infix: $dot$, prec: 2),
   sum: (infix: $+$, prec: 1),
+  parens: (expr: $(wilds("expr"))$),
   // unary-plus: (prefix: $+$, prec: 3),
-  unary-int: (prefix: $integral$, prec: 1),
+  // unary-int: (prefix: $integral$, prec: 1),
   summation: (
     prefix: $sum_(wild("var") = wild("start"))^wild("stop")$,
     prec: 2
   ),
-  pow: (
-    expr: $wild("base")^wild("exp")$,
-  ),
+  pow: (expr: $wild("base")^wild("exp")$),
   times: (infix: $times$, prec: 2),
-  // div: (op: $div$, prec: 2),
-  // type: (
-  //   infix: $::$,
-  //   prec: 3,
-  // ),
-  // commutator: (
-  //   expr: $[wild("left"), wild("right")]$,
-  // ),
+  div: (op: $div$, prec: 2),
+  type: (infix: $::$, prec: 5),
+  commutator: (expr: $[wilds("left"), wilds("right")]$),
 )
+
+#set page(width: auto, height: auto)
 
 #let eq = $sum_(k = 1)^n 1/k! dot x^n + 3$
 // #let eq = $L B times C + D times D$
 // #let eq = $a + integral c times d + b$
-// #let eq = $a times b + c$
+// #let eq = $ tack sum_(k = 1)^oo [A, B dot k::epsilon] + sqrt(3)$
 
 #squeeze-space(eq.body.children)
 
@@ -131,7 +150,8 @@
   let (head, ..rest) = it.values()
   let h = array(jumble.md4(head)).sum()*7deg
   let s = calc.rem(array(jumble.md4(head.rev())).sum(), 100)*1%
-  let c = color.hsv(h, s/2 + 50%, 70%)
-  text(c, $head(#rest.join($,$))$)
+  let c = color.hsv(h, s/2 + 50%, 80%)
+  // text(c, $head(#rest.join($,$))$)
+  rect(stroke: (rest: 1pt + c), $ head(#rest.join($,$)) $, fill: c.desaturate(95%).lighten(100%), radius: 15pt)
 })
-
+#text(red, $rest.join()$)

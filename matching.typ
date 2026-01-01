@@ -1,16 +1,18 @@
-#let wild(name) = metadata((wildcard: name))
-#let is-wildcard(it) = (
+#let wild(name, many: false) = metadata((wild: name, many: many))
+#let wilds = wild.with(many: true)
+
+#let is-wild(it) = (
   type(it) == content and
   it.func() == metadata and
   type(it.value) == dictionary and
-  "wildcard" in it.value
+  "wild" in it.value
 )
-#let wildcard-name(it) = it.value.wildcard
+#let wild-name(it) = it.value.wild
 
 #let match(pattern, expr, ctx: (:)) = {
   
-  if is-wildcard(pattern) {
-    let name = wildcard-name(pattern)
+  if is-wild(pattern) {
+    let name = wild-name(pattern)
     if name in ctx {
       if ctx.at(name) != expr { return false }
     } else {
@@ -30,13 +32,47 @@
 
   } else if type(pattern) == array {
     if type(expr) != array { return false }
-    if pattern.len() != expr.len() { return false }
+    // if pattern.len() != expr.len() { return false }
 
-    for (i, left) in pattern.enumerate() {
-      let right = expr.at(i)
-      ctx = match(left, right, ctx: ctx)
-      if ctx == false { return false }
+    // for (i, left) in pattern.enumerate() {
+    //   let right = expr.at(i)
+    //   ctx = match(left, right, ctx: ctx)
+    //   if ctx == false { return false }
+    // }
+
+
+    let (pi, ei) = (0, 0)
+    while pi < pattern.len() and ei < expr.len() {
+      let p = pattern.at(pi)
+      let e = expr.at(ei)
+
+      if is-wild(p) and p.value.many == true {
+        let p-next = pattern.at(pi + 1, default: none)
+        if p-next == none { // wild matches rest
+          ctx.insert(wild-name(p), expr.slice(ei).join())
+          
+        } else {
+          let ei-end = ei
+          while ei-end < expr.len() {
+            let m = match(p-next, expr.at(ei-end), ctx: ctx)
+            if m != false { break }
+            ei-end += 1
+          }
+          ctx.insert(wild-name(p), expr.slice(ei, ei-end).join())
+          pi += 1
+          ei = ei-end
+          continue 
+        }
+
+      } else {
+        ctx = match(p, e, ctx: ctx)
+        if ctx == false { return false }
+      }
+
+      pi += 1
+      ei += 1
     }
+
 
   } else {
     if pattern != expr { return false }
@@ -45,8 +81,11 @@
   return ctx
 }
 
-#match($sin(arcsin(wild("x"))) = wild("x")$, $sin(arcsin(A)) = A$)
+// #match($sin(arcsin(wild("x"))) = wild("x")$, $sin(arcsin(A)) = A$)
 
 #$x + oo(a b)$.body.children
 
 
+#$(wilds("expr"), wilds("b"))$.body.body.children
+
+#match($(wilds("l"), wilds("r"))$, $(1 2, 3 4)$)
