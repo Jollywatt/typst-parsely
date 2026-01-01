@@ -2,7 +2,6 @@
 #let parse(text, grammar) = {
   let parse-op(tokens) = {
     for (name, spec) in grammar {
-
       let pattern = spec.values().first()
 
       if type(pattern) == str {
@@ -14,9 +13,11 @@
             name: name,
             kind: spec.keys().first(),
             ..spec,
+            slots: (:),
           )
           return (op, tokens.slice(n))
         }
+
       } else if type(pattern) == regex {
         let m = tokens.join(" ")
         m = m.match(pattern)
@@ -25,17 +26,13 @@
           name: name,
           kind: spec.keys().first(),
           ..spec,
-          captures: m.captures,
+          slots: spec.slots.zip(m.captures).to-dict(),
         )
         return (op, tokens.slice(m.text.split().len()))
       }
     }
     return (none, tokens)
   }
-  
-  // let is-prefix(op) = parse-op(op) == "prefix"
-  // let is-infix(op) = parse-op(op) == "infix"
-  // let is-postfix(op) = parse-op(op) == "postfix"
 
 
   let parse-expr(tokens, min-prec) = {
@@ -52,13 +49,10 @@
 
     } else if op.kind == "prefix" {
       let (right, rest) = parse-expr(tokens, op.prec)
-      left = (op: op.name, right: right)
-      if "captures" in op {
-        for (i, v) in op.captures.enumerate() {
-          left.insert("a"+str(i), v)
-        }
-      }
+      left = (op: op.name, ..op.slots, right: right)
       tokens = rest
+    } else if op.kind == "expr" {
+      left = (op: op.name, ..op.slots)
     }
     
     // Parse infix and postfix operators
@@ -97,10 +91,11 @@
   integral: (prefix: "int", prec: 2),
   qed: (postfix: ".", prec: 0),
   assert: (prefix: "|-", prec: 0),
-  summation: (prefix: regex("sum (\\S+)"), prec: 2)
+  summation: (prefix: regex("sum (\\S+)"), slots: ("range",), prec: 2),
+  commutator: (expr: regex("\\[ (\\S+) , (\\S+) \\]"), slots: ("left", "right"), prec: 10)
 )
 
-#let expr = "|- a * b + sum 10 k * z + 1 ."
+#let expr = "|- [ a , b ] * a + h + sum 10 k!"
 // #let expr = "k * z + 1 ."
 #raw(expr)
 
