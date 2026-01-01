@@ -7,111 +7,115 @@
 
 #let squeeze-space(seq) = seq.filter(it => not is-space(it))
 
-#let parse-atom(grammar, tokens) = {
-  for (name, schema) in grammar {
-    if "pattern" not in schema { continue }
 
-    let pattern = schema.pattern.body
-    let (next, ..rest) = tokens
+#let parse(it, grammar) = {
 
-    if repr(pattern.func()) == "sequence" {
-      pattern = squeeze-space(pattern.children)
-      let len = pattern.len()
-      if tokens.len() < len { continue }
-      next = tokens.slice(0, len)
-      rest = tokens.slice(len)
+  let parse-op(tokens) = {
+    for (name, spec) in grammar {
+      let pattern = spec.values().first()
+      pattern = pattern.body
+
+      if repr(pattern.func()) == "sequence" {
+        pattern = pattern.children
+      } else {
+        pattern = (pattern,)
+      }
+
+      let n-ahead = pattern.len()
+      if n-ahead > tokens.len() { continue }
+
+      let m = match(pattern, tokens.slice(0, n-ahead))
+      if m == false { continue }
+
+      let op = (
+        kind: spec.keys().first(),
+        name: name,
+        ..if "prec" in spec { (prec: spec.prec) },
+        slots: m,
+      )
+      return (op, tokens.slice(n-ahead))
     }
 
-    let m = match(pattern, next)
-    if m == false { continue }
-
-    return ((kind: name, ..m), rest)
+    (none, tokens)
   }
-  return (tokens.first(), tokens.slice(1))
-}
+
+  let parse-expr(tokens, min-prec) = {
+    tokens = squeeze-space(tokens)
+    let left = none
+    
+    if tokens.len() == 0 { return (left, tokens) }
 
 
+    let (op, tokens) = parse-op(tokens)
+    if op == none {
+      left = tokens.first()
+      tokens = tokens.slice(1)
+    } else if op.kind == "expr" {
+      left = (op: op.name, ..op.slots)
+    
+    // prefix
+    } else if op.kind == "prefix" {
+      let (right, rest) = parse-expr(tokens, op.prec)
+      left = (op: op.name, ..op.slots, right: right)
+      tokens = rest
+    }
 
-#let parse-sequence(grammar, tokens, min-prec: 0) = {
-  tokens = squeeze-space(tokens)
+    // infix and postfix
+    while tokens.len() > 0 {
+      let (op, subtokens) = parse-op(tokens)
+      if op == none { break }
+      
+      if op.kind == "postfix" {
+        if op.prec < min-prec { break }
+        left = (op: op.name, left: left)
+        tokens = subtokens
 
-  let match-operator(token) = {
-    for (name, schema) in grammar {
-      if "op" not in schema { continue }
-      if token == schema.op.body {
-        return name
+      } else if op.kind == "infix" {
+        if op.prec < min-prec { break }
+        let (right, rest) = parse-expr(subtokens, op.prec)
+        left = (op: op.name, left: left, right: right)
+        tokens = rest
+
+      } else {
+        break
       }
     }
-  }
-
-  let (result, remaining) = parse-atom(grammar, tokens)
-
-  while remaining.len() > 0 {
-    let next = remaining.first()
-
-    let o = match-operator(next)
-    if o == none { break }
-    let prec = grammar.at(o).precedence
-    if prec < min-prec { break }
-
-
-    let op = next.text
-    remaining = remaining.slice(1)
     
-    // Parse right operand with higher precedence
-    let (rhs, r) = parse-sequence(grammar, remaining, min-prec: prec + 1)
-    remaining = r
-    
-    result = (kind: "op", op: op, lhs: result, rhs: rhs)
+    (left, tokens)
   }
-
-  return (result, remaining)
-
+  
+  parse-expr(it.body.children, 0)
 }
 
 
 #let grammar = (
-  eq: (op: $=$, precedence: 0),
-  sum: (
-    op: $+$,
-    // pattern: $wild("left") + wild("right")$,
-    precedence: 1,
-  ),
-  unary-plus: (prefix: $+$, precedence: 3),
-  unary-int: (prefix: $integral$, precedence: 1),
+  eq: (infix: $=$, prec: 0),
+  dot: (infix: $dot$, prec: 2),
+  sum: (infix: $+$, prec: 1),
+  // unary-plus: (prefix: $+$, prec: 3),
+  unary-int: (prefix: $integral$, prec: 1),
   summation: (
-    pattern: $sum_(wild("var") = wild("start"))^wild("stop") wild("summand")$
+    prefix: $sum_(wild("var") = wild("start"))^wild("stop")$,
+    prec: 2
   ),
   pow: (
-    pattern: $wild("base")^wild("exp")$,
-    precedence: 3,
+    expr: $wild("base")^wild("exp")$,
   ),
-  times: (
-    op: $times$,
-    pattern: $wild("left") times wild("right")$,
-    precedence: 2,
-  ),
-  div: (
-    op: $div$,
-    precedence: 2,
-  ),
-  juxt: (
-    // pattern: $wild("left") wild("right")$,
-    precedence: 2,
-  ),
-  dot: (op: $dot$, precedence: 2),
-  type: (
-    pattern: $wild("value")::wild("type")$,
-    precedence: 3,
-  ),
-  commutator: (
-    pattern: $[wild("left"), wild("right")]$,
-  ),
+  times: (infix: $times$, prec: 2),
+  // div: (op: $div$, prec: 2),
+  // type: (
+  //   infix: $::$,
+  //   prec: 3,
+  // ),
+  // commutator: (
+  //   expr: $[wild("left"), wild("right")]$,
+  // ),
 )
 
-#let eq = $sum_(k = 1)^n 1/k! dot x^k$
-#let eq = $L B times C + D times D$
-#let eq = $a + integral c times d + b$
+#let eq = $sum_(k = 1)^n 1/k! dot x^n + 3$
+// #let eq = $L B times C + D times D$
+// #let eq = $a + integral c times d + b$
+// #let eq = $a times b + c$
 
 #squeeze-space(eq.body.children)
 
@@ -119,16 +123,15 @@
 
 #line()
 
-#let (tree, rest) = parse-sequence(grammar, eq.body.children)
+#let (tree, rest) = parse(eq, grammar)
 #tree
 
-
+#import "@preview/jumble:0.0.1"
 #post-walk(tree, it => {
-  if it.kind == "op" {
-    $(it.lhs #text(blue, symbol(it.op)) it.rhs)$
-  } else {
-    let (head, ..rest) = it.values()
-    $head(#rest.join($,$))$
-  }
+  let (head, ..rest) = it.values()
+  let h = array(jumble.md4(head)).sum()*7deg
+  let s = calc.rem(array(jumble.md4(head.rev())).sum(), 100)*1%
+  let c = color.hsv(h, s/2 + 50%, 70%)
+  text(c, $head(#rest.join($,$))$)
 })
 
