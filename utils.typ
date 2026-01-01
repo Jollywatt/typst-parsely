@@ -1,4 +1,4 @@
-#let is-expr(it) = type(it) == dictionary and "kind" in it
+#let is-expr(it) = type(it) == dictionary
 
 #let post-walk(it, fn) = {
   if not is-expr(it) { return it }

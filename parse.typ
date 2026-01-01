@@ -74,9 +74,11 @@
   eq: (op: $=$, precedence: 0),
   sum: (
     op: $+$,
-    pattern: $wild("left") + wild("right")$,
+    // pattern: $wild("left") + wild("right")$,
     precedence: 1,
   ),
+  unary-plus: (prefix: $+$, precedence: 3),
+  unary-int: (prefix: $integral$, precedence: 1),
   summation: (
     pattern: $sum_(wild("var") = wild("start"))^wild("stop") wild("summand")$
   ),
@@ -94,7 +96,7 @@
     precedence: 2,
   ),
   juxt: (
-    pattern: $wild("left") wild("right")$,
+    // pattern: $wild("left") wild("right")$,
     precedence: 2,
   ),
   dot: (op: $dot$, precedence: 2),
@@ -109,6 +111,7 @@
 
 #let eq = $sum_(k = 1)^n 1/k! dot x^k$
 #let eq = $L B times C + D times D$
+#let eq = $a + integral c times d + b$
 
 #squeeze-space(eq.body.children)
 
@@ -133,3 +136,4 @@
 #line()
 
 #grammar.summation.pattern.body.children
+
