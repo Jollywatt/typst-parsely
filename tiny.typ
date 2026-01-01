@@ -1,12 +1,42 @@
 
 #let parse(text, grammar) = {
-  let ops = (:)
-  for (name, def) in grammar {
-    if "prefix" in def { ops.insert(def.prefix, (type: "prefix", name: name, prec: def.prec)) }
-    if "infix" in def { ops.insert(def.infix, (type: "infix", name: name, prec: def.prec)) }
-    if "postfix" in def { ops.insert(def.postfix, (type: "postfix", name: name, prec: def.prec)) }
+  let parse-op(tokens) = {
+    for (name, spec) in grammar {
+
+      let pattern = spec.values().first()
+
+      if type(pattern) == str {
+        pattern = pattern.split()
+        let n = pattern.len()
+        if tokens.len() < n { continue }
+        if tokens.slice(0, n) == pattern {
+          let op = (
+            name: name,
+            kind: spec.keys().first(),
+            ..spec,
+          )
+          return (op, tokens.slice(n))
+        }
+      } else if type(pattern) == regex {
+        let m = tokens.join(" ")
+        m = m.match(pattern)
+        if m == none or m.start != 0 { continue }
+        let op = (
+          name: name,
+          kind: spec.keys().first(),
+          ..spec,
+          captures: m.captures,
+        )
+        return (op, tokens.slice(m.text.split().len()))
+      }
+    }
+    return (none, tokens)
   }
   
+  // let is-prefix(op) = parse-op(op) == "prefix"
+  // let is-infix(op) = parse-op(op) == "infix"
+  // let is-postfix(op) = parse-op(op) == "postfix"
+
 
   let parse-expr(tokens, min-prec) = {
     let left = none
@@ -14,28 +44,39 @@
     if tokens.len() == 0 { return (left, tokens) }
 
     // Parse prefix operators or atom
-    if tokens.first() in ops and ops.at(tokens.first()).type == "prefix" {
-      let op = ops.at(tokens.first())
-      let (right, tokens) = parse-expr(tokens.slice(1), op.prec + 1)
-      left = (op: op.name, right: right)
-    } else {
+
+    let (op, tokens) = parse-op(tokens)
+    if op == none {
       left = tokens.first()
       tokens = tokens.slice(1)
+
+    } else if op.kind == "prefix" {
+      let (right, rest) = parse-expr(tokens, op.prec)
+      left = (op: op.name, right: right)
+      if "captures" in op {
+        for (i, v) in op.captures.enumerate() {
+          left.insert("a"+str(i), v)
+        }
+      }
+      tokens = rest
     }
     
     // Parse infix and postfix operators
-    while tokens.len() > 0 and tokens.first() in ops {
-      let op = ops.at(tokens.first())
+    while tokens.len() > 0 {
+      let (op, subtokens) = parse-op(tokens)
+      if op == none { break }
       
-      if op.type == "postfix" {
+      if op.kind == "postfix" {
         if op.prec < min-prec { break }
-        tokens = tokens.slice(1)
         left = (op: op.name, left: left)
-      } else if op.type == "infix" {
+        tokens = subtokens
+
+      } else if op.kind == "infix" {
         if op.prec < min-prec { break }
-        let (right, rest) = parse-expr(tokens.slice(1), op.prec + 1)
+        let (right, rest) = parse-expr(subtokens, op.prec)
         left = (op: op.name, left: left, right: right)
         tokens = rest
+
       } else {
         break
       }
@@ -56,9 +97,11 @@
   integral: (prefix: "int", prec: 2),
   qed: (postfix: ".", prec: 0),
   assert: (prefix: "|-", prec: 0),
+  summation: (prefix: regex("sum (\\S+)"), prec: 2)
 )
 
-#let expr = "|- a + h"
+#let expr = "|- a * b + sum 10 k * z + 1 ."
+// #let expr = "k * z + 1 ."
 #raw(expr)
 
 #parse(expr, grammar)

@@ -132,8 +132,3 @@
   }
 })
 
-
-#line()
-
-#grammar.summation.pattern.body.children
-
