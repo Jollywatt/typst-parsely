@@ -96,7 +96,7 @@
     (left, tokens)
   }
   
-  parse-expr(it.body.children, 0)
+  parse-expr(sequence-children(it.body), 0)
 }
 
 
