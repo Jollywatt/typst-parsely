@@ -6,9 +6,10 @@
   repr(it.func()) == "symbol" and it.fields().text.trim() == ""
 )
 
+#let is-sequence(it) = type(it) == content and repr(it.func()) == "sequence"
 
 #let sequence-children(it) = {
-  if type(it) == content and repr(it.func()) == "sequence" {
+  if is-sequence(it) {
     it.children
   } else if type(it) == array {
     it
@@ -31,6 +32,7 @@
     let parse-op(tokens) = {
       for (name, spec) in grammar {
         let pattern = spec.values().first()
+        assert(type(pattern) == content and pattern.func() == math.equation)
         pattern = pattern.body
 
         if repr(pattern.func()) == "sequence" {
@@ -45,8 +47,17 @@
         if n-ahead > tokens.len() { continue }
         let slice = tokens.slice(0, n-ahead)
 
-        let m = match((pattern), (slice))
-        if m == false { continue }
+        let m = match(pattern, slice)
+        if m == false {
+          if is-sequence(tokens.first()) {
+            slice = slice.first().children
+            m = match(pattern, slice)
+            n-ahead = 1
+            if m == false { continue }
+          } else {
+            continue
+          }
+        }
 
         let slots = m.pairs().map(((slot-name, expr)) => {
           let seq = sequence-children(expr)
@@ -121,6 +132,7 @@
 
 
 #let grammar = (
+  dif: (prefix: $dif$, prec: 4),
   assert: (prefix: $tack$, prec: 0),
   eq: (infix: $=$, prec: 0),
   dot: (infix: $dot$, prec: 2),
@@ -141,10 +153,11 @@
 
 #set page(width: auto, height: auto)
 
-#let eq = $sum_(k = 1)^n 1/k! dot x^n + 3$
-// #let eq = $L B times C + D times D$
-// #let eq = $a + integral c times d + b$
-// #let eq = $ tack sum_(k = 1)^oo [A, B dot k::epsilon] + sqrt(3)$
+#let eq = $sum_(k = 1)^n 1/k! dot x^n + a$
+#let eq = $L B times C + D times D$
+#let eq = $a + integral c times d + b$
+#let eq = $ tack sum_(k = 1)^oo [A, B dot k::epsilon] + sqrt(3)$
+#let eq = $dif x$
 
 #squeeze-space(eq.body.children)
 
