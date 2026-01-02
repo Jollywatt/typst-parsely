@@ -33,11 +33,7 @@
   question: (postfix: $?$, prec: 0),
 )
 
-#raw(repr($#util.flatten-sequence($-a!$.body).join()$))
-
-#parse($#util.flatten-sequence($-a!$.body).join()$, grammar)
-
 #assert.eq(
-  lisp-expr($-6!$, grammar),
-  ("neg", ("fact", $6$.body))
+  lisp-expr($-a!$, grammar),
+  ("neg", ("fact", $a$.body))
 )
