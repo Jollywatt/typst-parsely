@@ -1,0 +1,13 @@
+[package]
+name = "parsely"
+version = "0.0.1"
+entrypoint = "src/exports.typ"
+authors = ["Joseph Wilson (Jollywatt)"]
+license = "MIT"
+description = "Parse equations and content into expression trees."
+exclude = [
+	"docs/",
+	"test/",
+]
+keywords = [
+]

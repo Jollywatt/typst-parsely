@@ -82,12 +82,3 @@
   return ctx
 }
 
-
-#$x + oo(a b)$.body.children
-
-
-#$(wilds("expr"), wilds("b"))$.body.body.children
-
-#match($(wilds("l"), wilds("r"))$, $(1 2, 3 4)$)
-
-#match($dif a b$, $dif a b$)
