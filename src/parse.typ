@@ -1,6 +1,18 @@
 #import "match.typ": *
 #import "util.typ": *
 
+// This is a Pratt parser
+// which handles prefix, infix and postfix operators
+// of variable precedence using recursive descent.
+// 
+// Tokens may be symbols or entire subexpressions,
+// to support the nested structures produced by math mode.
+// 
+// Multi-token operators are supported and may use
+// pattern matching with capture groups.
+// For example, $sum_(#var = #lo)^#hi$ may be parsed as a
+// prefix operator with "slots" (capture groups) for the
+// summation variable and limits.
 
 #let parse(it, grammar) = {
 
