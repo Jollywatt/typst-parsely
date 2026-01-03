@@ -4,21 +4,24 @@
 
 #let parse(it, grammar) = {
 
-  let parse-expr(tokens, min-prec) = {
+  let parse-expr(it, min-prec) = {
+    assert(type(it) in (array, content))
+
+    let tokens = sequence-children(it)
+    tokens = flatten-sequence(tokens)
+    tokens = squeeze-space(tokens)
+
 
     let parse-op(tokens) = {
+
+      let op = none
+
       for (name, spec) in grammar {
         let pattern = spec.values().first()
         assert(type(pattern) == content and pattern.func() == math.equation)
         pattern = pattern.body
-
-        if repr(pattern.func()) == "sequence" {
-          pattern = pattern.children
-          pattern = squeeze-space(pattern)
-        } else {
-          pattern = (pattern,)
-        }
-
+        pattern = sequence-children(pattern)
+        pattern = squeeze-space(pattern)
 
         let n-ahead = pattern.len()
         if n-ahead > tokens.len() { continue }
@@ -27,31 +30,50 @@
         let m = match(pattern, slice)
         if m == false { continue }
 
-        let slots = m.pairs().map(((slot-name, expr)) => {
-          let seq = sequence-children(expr)
-          let (tree, rest) = parse-expr(seq, 0)
-          if rest.len() > 0 {
-            // panic("failed to parse")
-            return (slot-name, expr)
-          }
-          (slot-name, tree)
-        }).to-dict()
-
-        let op = (
+        tokens = tokens.slice(n-ahead)
+        op = (
           kind: spec.keys().first(),
           name: name,
           ..if "prec" in spec { (prec: spec.prec) },
-          slots: slots,
+          slots: m,
         )
-        return (op, tokens.slice(n-ahead))
+        break
       }
 
-      (none, tokens)
+      
+
+      if op == none {
+        let it = tokens.first()
+        if type(it) == content {
+          let kind = repr(it.func())
+
+          if kind not in ("symbol", "text") {
+            tokens = tokens.slice(1)
+            op = (
+              name: kind,
+              kind: "expr",
+              slots: it.fields(),
+            )
+
+          }
+        }
+      }
+
+      if op != none {
+        for (key, slot) in op.slots {
+          // panic(slot.func())
+          if type(slot) != content { continue }
+          let (tree, rest) = parse-expr(slot, 0)
+          if rest.len() != 0 { return (none, tokens) }
+          op.slots.at(key) = tree
+          
+        }
+      }
+
+
+      (op, tokens)
     }
 
-
-    tokens = squeeze-space(tokens)
-    tokens = flatten-sequence(tokens)
 
     let left = none
     
@@ -96,7 +118,7 @@
     (left, tokens)
   }
   
-  parse-expr(sequence-children(it.body), 0)
+  parse-expr(it.body, 0)
 }
 
 
