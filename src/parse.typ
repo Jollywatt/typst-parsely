@@ -21,7 +21,7 @@
 
     let tokens = sequence-children(it)
     tokens = flatten-sequence(tokens)
-    tokens = squeeze-space(tokens)
+    // tokens = squeeze-space(tokens)
 
 
     let parse-op(tokens) = {
@@ -33,16 +33,17 @@
         assert(type(pattern) == content and pattern.func() == math.equation)
         pattern = pattern.body
         pattern = sequence-children(pattern)
-        pattern = squeeze-space(pattern)
+        // pattern = squeeze-space(pattern)
 
         let n-ahead = pattern.len()
         if n-ahead > tokens.len() { continue }
         let slice = tokens.slice(0, n-ahead)
 
-        let m = match(pattern, slice)
+        let m = match-sequence(pattern, tokens, match: match)
         if m == false { continue }
+        (m, tokens) = m
 
-        tokens = tokens.slice(n-ahead)
+        // tokens = tokens.slice(n-ahead)
         op = (
           kind: spec.keys().first(),
           name: name,
@@ -55,6 +56,10 @@
       
 
       if op == none {
+        while is-space(tokens.first()) {
+          tokens = tokens.slice(1)
+          if tokens.len() == 0 { return (none, ()) }
+        }
         let it = tokens.first()
         if type(it) == content {
           let kind = repr(it.func())
@@ -93,7 +98,12 @@
 
 
     let (op, tokens) = parse-op(tokens)
+
+    let a = tokens
     if op == none {
+      while is-space(tokens.first()) {
+        tokens = tokens.slice(1)
+      }
       left = tokens.first()
       tokens = tokens.slice(1)
     } else if op.kind == "expr" {

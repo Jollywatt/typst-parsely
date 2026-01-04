@@ -3,34 +3,35 @@
 #import "src/util.typ": *
 
 #let grammar = (
-  assert: (prefix: $tack$, prec: 0),
-  eq: (infix: $=$, prec: 0),
-  dot: (infix: $dot$, prec: 2),
+  // assert: (prefix: $tack$, prec: 0),
+  // eq: (infix: $=$, prec: 0),
+  // dot: (infix: $dot$, prec: 2),
   sum: (infix: $+$, prec: 1),
-  sub: (infix: $-$, prec: 1),
-  parens: (expr: $(wilds("expr"))$),
-  unary-plus: (prefix: $+$, prec: 3),
-  unary-int: (prefix: $integral$, prec: 1),
-  summation: (
-    prefix: $sum_(wild("var") = wild("start"))^wild("stop")$,
-    prec: 2
-  ),
-  pow: (expr: $wild("base")^wild("exp")$),
-  times: (infix: $times$, prec: 2),
-  div: (op: $div$, prec: 2),
-  dif: (prefix: $dif$, prec: 4),
-  factorial: (postfix: $!$, prec: 3),
-  type: (infix: $::$, prec: 5),
-  commutator: (expr: $[wilds("left"), wilds("right")]$),
-  inv: (expr: $wild("base")'$),
+  // sub: (infix: $-$, prec: 1),
+  // parens: (expr: $(wilds("expr"))$),
+  // unary-plus: (prefix: $+$, prec: 3),
+  // unary-int: (prefix: $integral$, prec: 1),
+  // summation: (
+  //   prefix: $sum_(wild("var") = wild("start"))^wild("stop")$,
+  //   prec: 2
+  // ),
+  // pow: (expr: $wild("base")^wild("exp")$),
+  // times: (infix: $times$, prec: 2),
+  // div: (op: $div$, prec: 2),
+  // dif: (prefix: $dif$, prec: 4),
+  // factorial: (postfix: $!$, prec: 3),
+  // type: (infix: $::$, prec: 5),
+  // commutator: (expr: $[wilds("left"), wilds("right")]$),
+  // inv: (expr: $wild("base")'$),
+  jux: (expr: $wild("a") wild("b")$, prec: 100)
 )
 
 
 #set page(width: auto, height: auto)
 
 #let eq = $sum_(k = 1)^n 1/k! dot x^n + a$
-#let eq = $[R, U] dot F' dot B$
-// #let eq = $L B times C + D times D$
+#let eq = $[R, U] dot F' B$
+#let eq = $A + D$
 // #let eq = $a + integral c times d + b$
 // #let eq = $ a + b! $
 // #let eq = $h - root(5, dif x) + k$

@@ -22,6 +22,8 @@
 #assert.eq(match($a+b$, $a + b$), (:))
 #assert.eq(match($a + b$, $a+b$), (:))
 
+#assert.eq(match($a + b$, $a + b + c$), (:))
+
 
 // whitespace sensitive matching
 

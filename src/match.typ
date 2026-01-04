@@ -43,6 +43,73 @@
   else { it }
 }
 
+#let match-sequence(pattern, expr, match: none, ctx: (:)) = {
+  pattern = tighten(pattern)
+
+  let (pi, ei) = (0, 0)
+  let is-tight = false
+  let is-loose = false
+  let p-space = false
+  while pi < pattern.len() and ei < expr.len() {
+    let p = pattern.at(pi)
+    let e = expr.at(ei)
+
+    if p == tight {
+      is-tight = true
+      pi += 1
+      continue
+    }
+
+    if p == loose {
+      is-loose = true
+      p = [ ]
+    }
+
+    if is-wild(p) and p.value.many == true {
+      let p-next = pattern.at(pi + 1, default: none)
+      if p-next == none {
+        // trailing wild matches rest of expr
+        ctx.insert(wild-name(p), expr.slice(ei).join())
+        
+      } else {
+        // wild matches until next pattern token is seen
+        let ei-end = ei
+        while ei-end < expr.len() {
+          let m = match(p-next, expr.at(ei-end), ctx: ctx)
+          if m != false { break }
+          ei-end += 1
+        }
+        ctx.insert(wild-name(p), expr.slice(ei, ei-end).join())
+        pi += 1
+        ei = ei-end
+        continue 
+      }
+
+    } else {
+      let m = match(p, e, ctx: ctx)
+      if m == false {
+        // ignore whitespace mismatches
+        if is-space(p) and not is-loose {
+          pi += 1
+          continue
+        } else if is-space(e) and not is-tight {
+          ei += 1
+          continue
+        }
+        return false
+      } else {
+        ctx = m
+      }
+    }
+
+    pi += 1
+    ei += 1
+
+    is-tight = false
+  }
+
+  return (ctx, expr.slice(ei))
+}
 
 #let match(pattern, expr, ctx: (:)) = {
   
@@ -72,69 +139,10 @@
   } else if type(pattern) == array {
     if type(expr) != array { return false }
 
-    pattern = tighten(pattern)
-
-    let (pi, ei) = (0, 0)
-    let is-tight = false
-    let is-loose = false
-    let p-space = false
-    while pi < pattern.len() and ei < expr.len() {
-      let p = pattern.at(pi)
-      let e = expr.at(ei)
-
-      if p == tight {
-        is-tight = true
-        pi += 1
-        continue
-      }
-
-      if p == loose {
-        is-loose = true
-        p = [ ]
-      }
-
-      if is-wild(p) and p.value.many == true {
-        let p-next = pattern.at(pi + 1, default: none)
-        if p-next == none {
-          // trailing wild matches rest of expr
-          ctx.insert(wild-name(p), expr.slice(ei).join())
-          
-        } else {
-          // wild matches until next pattern token is seen
-          let ei-end = ei
-          while ei-end < expr.len() {
-            let m = match(p-next, expr.at(ei-end), ctx: ctx)
-            if m != false { break }
-            ei-end += 1
-          }
-          ctx.insert(wild-name(p), expr.slice(ei, ei-end).join())
-          pi += 1
-          ei = ei-end
-          continue 
-        }
-
-      } else {
-        let m = match(p, e, ctx: ctx)
-        if m == false {
-          // ignore whitespace mismatches
-          if is-space(p) and not is-loose {
-            pi += 1
-            continue
-          } else if is-space(e) and not is-tight {
-            ei += 1
-            continue
-          }
-          return false
-        } else {
-          ctx = m
-        }
-      }
-
-      pi += 1
-      ei += 1
-
-      is-tight = false
-    }
+    let m = match-sequence(pattern, expr, ctx: ctx, match: match)
+    if m == false { return false }
+    let (m, rest) = m
+    ctx = m
 
 
   } else {
