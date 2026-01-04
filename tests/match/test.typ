@@ -21,3 +21,13 @@
 
 #assert.eq(match($a+b$, $a + b$), (:))
 #assert.eq(match($a + b$, $a+b$), (:))
+
+
+// whitespace sensitive matching
+
+#assert.eq(match($a tight + tight b$, $a+b$), (:))
+#assert.eq(match($a tight + b$, $a+ b$), (:))
+#assert.eq(match($a tight + b$, $a +b$), false)
+
+#assert.eq(match($wild("fn") tight (wilds("args"))$, $f(x)$), (fn: $f$.body, args: $x$.body))
+#assert.eq(match($wild("fn") tight (wilds("args"))$, $f (x)$), false)

@@ -11,10 +11,37 @@
 )
 #let wild-name(it) = it.value.wild
 
+#let tight = metadata((tight: true))
+
+#let tighten(tokens) = {
+  let out = ()
+  let pending = ()
+  let is-tight = false
+  for t in tokens {
+    if is-space(t) {
+      if not is-tight { pending.push(t) }
+    } else if t == tight {
+      is-tight = true
+      out.push(t)
+      pending = ()
+    } else {
+      if not is-tight {
+        out += pending
+        pending = ()
+      }
+      is-tight = false
+      out.push(t)
+    }
+  }
+  return out
+}
+
+
 #let unwrap-styled(it) = {
   if repr(it.func()) == "styled" { it.child }
   else { it }
 }
+
 
 #let match(pattern, expr, ctx: (:)) = {
   
@@ -44,10 +71,20 @@
   } else if type(pattern) == array {
     if type(expr) != array { return false }
 
+    pattern = tighten(pattern)
+
     let (pi, ei) = (0, 0)
+    let is-tight = false
+    let p-space = false
     while pi < pattern.len() and ei < expr.len() {
       let p = pattern.at(pi)
       let e = expr.at(ei)
+
+      if p == tight {
+        is-tight = true
+        pi += 1
+        continue
+      }
 
       if is-wild(p) and p.value.many == true {
         let p-next = pattern.at(pi + 1, default: none)
@@ -76,7 +113,7 @@
           if is-space(p) {
             pi += 1
             continue
-          } else if is-space(e) {
+          } else if is-space(e) and not is-tight {
             ei += 1
             continue
           }
@@ -88,6 +125,8 @@
 
       pi += 1
       ei += 1
+
+      is-tight = false
     }
 
 
@@ -97,4 +136,3 @@
 
   return ctx
 }
-
