@@ -1,5 +1,4 @@
-#import "/src/exports.typ": *
-
+#import "/src/match.typ": *
 
 #assert.eq(match("A", "A"), (:))
 #assert.eq(match("A", "B"), false)
@@ -19,3 +18,6 @@
 
 #assert.eq(match($[wilds("seq")]$, $[1, 2, 3]$), (seq: $1, 2, 3$.body))
 #assert.eq(match($[wilds("left"), wilds("right")]$, $[a b c, x y z]$), (left: $a b c$.body, right: $x y z$.body))
+
+#assert.eq(match($a+b$, $a + b$), (:))
+#assert.eq(match($a + b$, $a+b$), (:))

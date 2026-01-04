@@ -1,3 +1,5 @@
+#import "util.typ": is-space
+
 #let wild(name, many: false) = metadata((wild: name, many: many))
 #let wilds = wild.with(many: true)
 
@@ -49,10 +51,12 @@
 
       if is-wild(p) and p.value.many == true {
         let p-next = pattern.at(pi + 1, default: none)
-        if p-next == none { // wild matches rest
+        if p-next == none {
+          // trailing wild matches rest of expr
           ctx.insert(wild-name(p), expr.slice(ei).join())
           
         } else {
+          // wild matches until next pattern token is seen
           let ei-end = ei
           while ei-end < expr.len() {
             let m = match(p-next, expr.at(ei-end), ctx: ctx)
@@ -66,8 +70,20 @@
         }
 
       } else {
-        ctx = match(p, e, ctx: ctx)
-        if ctx == false { return false }
+        let m = match(p, e, ctx: ctx)
+        if m == false {
+          // ignore whitespace mismatches
+          if is-space(p) {
+            pi += 1
+            continue
+          } else if is-space(e) {
+            ei += 1
+            continue
+          }
+          return false
+        } else {
+          ctx = m
+        }
       }
 
       pi += 1
