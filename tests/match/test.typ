@@ -31,3 +31,12 @@
 
 #assert.eq(match($wild("fn") tight (wilds("args"))$, $f(x)$), (fn: $f$.body, args: $x$.body))
 #assert.eq(match($wild("fn") tight (wilds("args"))$, $f (x)$), false)
+
+#assert.eq(match($1loose.$, $1.$), false)
+#assert.eq(match($1 loose .$, $1.$), false)
+#assert.eq(match($1loose.$, $1 .$), (:))
+#assert.eq(match($1 loose .$, $1 .$), (:))
+
+#assert.eq(match($wild("a") loose wild("b")$, $n!$), false)
+#assert.eq(match($wild("a") loose wild("b")$, $n !$), (a: $n$.body, b: $!$.body))
+

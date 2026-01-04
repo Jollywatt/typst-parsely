@@ -12,24 +12,25 @@
 #let wild-name(it) = it.value.wild
 
 #let tight = metadata((tight: true))
+#let loose = metadata((loose: true))
 
 #let tighten(tokens) = {
   let out = ()
   let pending = ()
-  let is-tight = false
+  let to-remove = false
   for t in tokens {
     if is-space(t) {
-      if not is-tight { pending.push(t) }
-    } else if t == tight {
-      is-tight = true
+      if not to-remove { pending.push(t) }
+    } else if t in (tight, loose) {
+      to-remove = true
       out.push(t)
       pending = ()
     } else {
-      if not is-tight {
+      if not to-remove {
         out += pending
         pending = ()
       }
-      is-tight = false
+      to-remove = false
       out.push(t)
     }
   }
@@ -75,6 +76,7 @@
 
     let (pi, ei) = (0, 0)
     let is-tight = false
+    let is-loose = false
     let p-space = false
     while pi < pattern.len() and ei < expr.len() {
       let p = pattern.at(pi)
@@ -84,6 +86,11 @@
         is-tight = true
         pi += 1
         continue
+      }
+
+      if p == loose {
+        is-loose = true
+        p = [ ]
       }
 
       if is-wild(p) and p.value.many == true {
@@ -110,7 +117,7 @@
         let m = match(p, e, ctx: ctx)
         if m == false {
           // ignore whitespace mismatches
-          if is-space(p) {
+          if is-space(p) and not is-loose {
             pi += 1
             continue
           } else if is-space(e) and not is-tight {
