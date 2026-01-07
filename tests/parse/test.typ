@@ -52,3 +52,13 @@
   lisp-expr($-a!$, grammar),
   ("neg", ("fact", $a$.body))
 )
+
+
+#let grammar = (
+  unary-sum: (prefix: $+$, prec: 3),
+  binary-sum: (infix: $+$, prec: 1),
+)
+#assert.eq(
+  lisp-expr($b+a$, grammar)
+  ("binary-sum", $a$.body, $b$.body)
+)

@@ -24,12 +24,19 @@
     // tokens = squeeze-space(tokens)
 
 
-    let parse-op(tokens) = {
+    let parse-op(tokens, ctx: (:)) = {
 
       let op = none
 
       for (name, spec) in grammar {
+        let kind = spec.keys().first()
         let pattern = spec.values().first()
+
+        // disallow leading with infix/postfix
+        if ctx.at("left", default: none) == none {
+          if kind in ("infix", "postfix") { continue }
+        }
+
         assert(type(pattern) == content and pattern.func() == math.equation)
         pattern = pattern.body
         pattern = sequence-children(pattern)
@@ -43,9 +50,8 @@
         if m == false { continue }
         (m, tokens) = m
 
-        // tokens = tokens.slice(n-ahead)
         op = (
-          kind: spec.keys().first(),
+          kind: kind,
           name: name,
           ..if "prec" in spec { (prec: spec.prec) },
           slots: m,
@@ -97,10 +103,11 @@
     if tokens.len() == 0 { return (left, tokens) }
 
 
-    let (op, tokens) = parse-op(tokens)
+    let (op, tokens) = parse-op(tokens, ctx: (left: left))
 
     let a = tokens
     if op == none {
+      if tokens.len() == 0 { return (none, ()) }
       while is-space(tokens.first()) {
         tokens = tokens.slice(1)
       }
@@ -118,7 +125,7 @@
 
     // infix and postfix
     while tokens.len() > 0 {
-      let (op, subtokens) = parse-op(tokens)
+      let (op, subtokens) = parse-op(tokens, ctx: (left: left))
       if op == none { break }
       
       if op.kind == "postfix" {
