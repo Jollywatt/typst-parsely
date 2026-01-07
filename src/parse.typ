@@ -26,15 +26,14 @@
 
     let parse-op(tokens, ctx: (:)) = {
 
-      let op = none
-
-      for (name, spec) in grammar {
+      // test whether tokens possibly begin with given operator
+      let match-op(spec, tokens) = {
         let kind = spec.keys().first()
         let pattern = spec.values().first()
 
         // disallow leading with infix/postfix
         if ctx.at("left", default: none) == none {
-          if kind in ("infix", "postfix") { continue }
+          if kind in ("infix", "postfix") { return false }
         }
 
         assert(type(pattern) == content and pattern.func() == math.equation)
@@ -43,33 +42,49 @@
         // pattern = squeeze-space(pattern)
 
         let n-ahead = pattern.len()
-        if n-ahead > tokens.len() { continue }
+        if n-ahead > tokens.len() { return false }
         let slice = tokens.slice(0, n-ahead)
 
         let m = match-sequence(pattern, tokens, match: match)
-        if m == false { continue }
-        (m, tokens) = m
+        if m == false { return false }
+        let (slots, tokens) = m
+        return (slots, tokens)
+      }
 
-        op = (
-          kind: kind,
+      // find all possible operators matching leading tokens
+      let matching-ops = ()
+      for (name, spec) in grammar {
+        let m = match-op(spec, tokens)
+        if m == false { continue }
+        let (m, tokens) = m
+        let op = (
+          kind: spec.keys().first(),
           name: name,
           ..if "prec" in spec { (prec: spec.prec) },
           slots: m,
         )
-        break
+        matching-ops.push((op, tokens))
       }
 
-      
+      // chose one operator
+      let (op, tokens) = matching-ops.first(default: (none, tokens))
 
+      // for (name, spec) in grammar {
+      //   break
+      // }
+
+      
+      // if no matches, interpret tokens as simple expressions
       if op == none {
         while is-space(tokens.first()) {
           tokens = tokens.slice(1)
           if tokens.len() == 0 { return (none, ()) }
         }
         let it = tokens.first()
+
+        // recurse into content
         if type(it) == content {
           let kind = repr(it.func())
-
           if kind not in ("symbol", "text") {
             tokens = tokens.slice(1)
             op = (
@@ -77,7 +92,6 @@
               kind: "expr",
               slots: it.fields(),
             )
-
           }
         }
       }
@@ -105,7 +119,6 @@
 
     let (op, tokens) = parse-op(tokens, ctx: (left: left))
 
-    let a = tokens
     if op == none {
       if tokens.len() == 0 { return (none, ()) }
       while is-space(tokens.first()) {
