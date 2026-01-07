@@ -67,7 +67,7 @@
       }
 
       // chose one operator
-      let (op, tokens) = matching-ops.first(default: (none, tokens))
+      let (op, tokens) = matching-ops.at(0, default: (none, tokens))
 
       // for (name, spec) in grammar {
       //   break

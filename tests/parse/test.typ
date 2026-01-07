@@ -55,10 +55,47 @@
 
 
 #let grammar = (
-  unary-sum: (prefix: $+$, prec: 3),
   binary-sum: (infix: $+$, prec: 1),
+  unary-sum: (prefix: $+$, prec: 3),
+  group: (expr: $(wilds("body"))$)
 )
 #assert.eq(
-  lisp-expr($b+a$, grammar)
+  lisp-expr($a + b$, grammar),
   ("binary-sum", $a$.body, $b$.body)
+)
+#assert.eq(
+  lisp-expr($a + (+b)$, grammar),
+  ("binary-sum", $a$.body, ("group", ("unary-sum", $b$.body),))
+)
+
+
+// juxtaposition as an infix operator
+
+#let grammar = (
+  sum: (infix: $+$, prec: 1),
+  dot: (infix: $dot$, prec: 2),
+  fact: (postfix: $!$, prec: 4),
+  mul: (infix: $$, prec: 3),
+  group: (expr: $(wilds("body"))$, prec: 0),
+)
+
+#assert.eq(
+  lisp-expr($a + b c! dot d$, grammar),
+  ("sum",
+    $a$.body,
+    ("dot",
+      ("mul",
+        $b$.body,
+        ("fact", $c$.body)
+      ),
+      $d$.body
+    )
+  )
+)
+#assert.eq(
+  lisp-expr($a (b + c)$, grammar),
+  ("mul",
+    $a$.body,
+    ("group", ("sum", $b$.body, $c$.body)),
+  )
 )
