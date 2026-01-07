@@ -1,4 +1,4 @@
-#import "util.typ": is-space
+#import "util.typ"
 
 #let wild(name, many: false) = metadata((wild: name, many: many))
 #let wilds = wild.with(many: true)
@@ -11,6 +11,15 @@
 )
 #let wild-name(it) = it.value.wild
 
+#let substitute-wilds(it, map) = util.walk-content(it, post: it => {
+  if is-wild(it) and wild-name(it) in map {
+    map.at(wild-name(it))
+  } else {
+    it
+  }
+})
+
+
 #let tight = metadata((tight: true))
 #let loose = metadata((loose: true))
 
@@ -19,7 +28,7 @@
   let pending = ()
   let to-remove = false
   for t in tokens {
-    if is-space(t) {
+    if util.is-space(t) {
       if not to-remove { pending.push(t) }
     } else if t in (tight, loose) {
       to-remove = true
@@ -89,10 +98,10 @@
       let m = match(p, e, ctx: ctx)
       if m == false {
         // ignore whitespace mismatches
-        if is-space(p) and not is-loose {
+        if util.is-space(p) and not is-loose {
           pi += 1
           continue
-        } else if is-space(e) and not is-tight {
+        } else if util.is-space(e) and not is-tight {
           ei += 1
           continue
         }

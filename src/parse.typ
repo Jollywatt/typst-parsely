@@ -76,7 +76,7 @@
       
       // if no matches, interpret tokens as simple expressions
       if op == none {
-        while is-space(tokens.first()) {
+        while util.is-space(tokens.first()) {
           tokens = tokens.slice(1)
           if tokens.len() == 0 { return (none, ()) }
         }
@@ -88,9 +88,9 @@
           if kind not in ("symbol", "text") {
             tokens = tokens.slice(1)
             op = (
-              name: kind,
+              name: "content",
               kind: "expr",
-              slots: it.fields(),
+              slots: (func: it.func(), fields: it.fields()),
             )
           }
         }
@@ -121,7 +121,7 @@
 
     if op == none {
       if tokens.len() == 0 { return (none, ()) }
-      while is-space(tokens.first()) {
+      while util.is-space(tokens.first()) {
         tokens = tokens.slice(1)
       }
       left = tokens.first()
