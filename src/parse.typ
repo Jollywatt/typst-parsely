@@ -19,7 +19,7 @@
   let parse-expr(it, min-prec) = {
     assert(type(it) in (array, content))
 
-    let tokens = sequence-children(it)
+    let tokens = as-array(it)
     tokens = flatten-sequence(tokens)
     // tokens = squeeze-space(tokens)
 
@@ -29,17 +29,12 @@
       // test whether tokens possibly begin with given operator
       let match-op(spec, tokens) = {
         let kind = spec.keys().first()
-        let pattern = spec.values().first()
+        let pattern = as-array(unwrap(spec.values().first()))
 
         // disallow leading with infix/postfix
         if ctx.at("left", default: none) == none {
           if kind in ("infix", "postfix") { return false }
         }
-
-        assert(type(pattern) == content and pattern.func() == math.equation)
-        pattern = pattern.body
-        pattern = sequence-children(pattern)
-        // pattern = squeeze-space(pattern)
 
         let n-ahead = pattern.len()
         if n-ahead > tokens.len() { return false }

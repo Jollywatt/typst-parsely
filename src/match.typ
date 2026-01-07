@@ -47,11 +47,6 @@
 }
 
 
-#let unwrap-styled(it) = {
-  if repr(it.func()) == "styled" { it.child }
-  else { it }
-}
-
 #let match-sequence(pattern, expr, match: none, ctx: (:)) = {
   pattern = tighten(pattern)
 
@@ -120,6 +115,19 @@
   return (ctx, expr.slice(ei))
 }
 
+
+// unwrap structures that should be ignored for matching
+#let unwrap(it) = {
+  if type(it) == content {
+    if it.func() == math.equation {
+      return unwrap(it.body)
+    } else if repr(it.func()) == "styled" {
+      return unwrap(it.child)
+    }
+  }
+  return it
+}
+
 #let match(pattern, expr, ctx: (:)) = {
   
   if is-wild(pattern) {
@@ -133,8 +141,10 @@
   } else if type(pattern) == content {
     if type(expr) != content { return false }
 
-    pattern = unwrap-styled(pattern)
-    expr = unwrap-styled(expr)
+
+
+    pattern = unwrap(pattern)
+    expr = unwrap(expr)
 
     if pattern.func() != expr.func() { return false }
 
