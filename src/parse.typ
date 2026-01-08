@@ -43,7 +43,13 @@
         let m = match-sequence(pattern, tokens, match: match)
         if m == false { return false }
         let (slots, tokens) = m
-        return (slots, tokens)
+        let op = (
+          kind: spec.keys().first(),
+          ..if "prec" in spec { (prec: spec.prec) },
+          ..if kind == "infix" { (assoc: spec.at("assoc", default: alignment.left)) },
+          slots: slots,
+        )
+        return (op, tokens)
       }
 
       // find all possible operators matching leading tokens
@@ -51,30 +57,24 @@
       for (name, spec) in grammar {
         let m = match-op(spec, tokens)
         if m == false { continue }
-        let (m, tokens) = m
-        let op = (
-          kind: spec.keys().first(),
-          name: name,
-          ..if "prec" in spec { (prec: spec.prec) },
-          slots: m,
-        )
+        let (op, tokens) = m
+        op.name = name        
         matching-ops.push((op, tokens))
       }
 
       // chose one operator
       let (op, tokens) = matching-ops.at(0, default: (none, tokens))
 
-      // for (name, spec) in grammar {
-      //   break
-      // }
-
       
       // if no matches, interpret tokens as simple expressions
       if op == none {
-        while util.is-space(tokens.first()) {
-          tokens = tokens.slice(1)
+        // drop whitespace
+        while true {
           if tokens.len() == 0 { return (none, ()) }
+          if util.is-space(tokens.first()) { tokens = tokens.slice(1) }
+          else { break }
         }
+
         let it = tokens.first()
 
         // recurse into content
@@ -88,6 +88,8 @@
               slots: (func: it.func(), fields: it.fields()),
             )
           }
+        } else {
+          panic()
         }
       }
 
@@ -143,9 +145,27 @@
 
       } else if op.kind == "infix" {
         if op.prec < min-prec { break }
-        let (right, rest) = parse-expr(subtokens, op.prec)
-        left = (head: op.name, left: left, right: right)
-        tokens = rest
+        
+        let assoc = op.at("assoc", default: alignment.left)
+        if assoc == true {
+          // N-ary: collect all operands for this operator
+          let args = (left,)
+          while true {
+            let (right, rest) = parse-expr(subtokens, op.prec + 1)
+            args.push(right)
+            tokens = rest
+            let (next-op, next-tokens) = parse-op(tokens, ctx: (left: right))
+            if next-op == none or next-op.name != op.name or next-op.prec < min-prec { break }
+            subtokens = next-tokens
+          }
+          left = (head: op.name, args: args)
+        } else {
+          // Binary with associativity
+          let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
+          let (right, rest) = parse-expr(subtokens, right-prec)
+          left = (head: op.name, left: left, right: right)
+          tokens = rest
+        }
 
       } else {
         break

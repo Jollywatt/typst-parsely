@@ -10,22 +10,30 @@
 #assert.eq(parse($a$, grammar).first(), $a$.body)
 #assert.eq(parse($1 + 1$, grammar).first(), (head: "sum", left: $1$.body, right: $1$.body))
 
-#let lisp-expr(it, grammar) = {
+#let assert-expr(grammar, it, target) = {
   let (tree, rest) = parse(it, grammar)
-  util.walk(tree, post: it => it.values())
+  let lisp = util.walk(tree, post: it => it.values())
+  target = util.walk-array(target, leaf: it => {
+    if type(it) == content and it.func() == math.equation {
+      it.body
+    } else {
+      it
+    }
+  })
+  assert.eq(lisp, target)
 }
 
-#assert.eq(
-  lisp-expr($a + b$, grammar),
-  ("sum", $a$.body, $b$.body)
+#assert-expr(grammar,
+  $a + b$,
+  ("sum", $a$, $b$)
 )
-#assert.eq(
-  lisp-expr($a + b times c$, grammar),
-  ("sum", $a$.body, ("times", $b$.body, $c$.body))
+#assert-expr(grammar,
+  $a + b times c$,
+  ("sum", $a$, ("times", $b$, $c$))
 )
-#assert.eq(
-  lisp-expr($a - b times c = d$, grammar),
-  ("eq", ("sub", $a$.body, ("times", $b$.body, $c$.body)), $d$.body)
+#assert-expr(grammar,
+  $a - b times c = d$,
+  ("eq", ("sub", $a$, ("times", $b$, $c$)), $d$)
 )
 
 
@@ -37,20 +45,20 @@
   parens: (expr: $(wilds("body"))$),
 )
 
-#assert.eq(
-  lisp-expr($-a!$, grammar),
-  ("neg", ("fact", $a$.body))
+#assert-expr(grammar,
+  $-a!$,
+  ("neg", ("fact", $a$))
 )
-#assert.eq(
-  lisp-expr($-a! = (-a)! ?$, grammar),
+#assert-expr(grammar,
+  $-a! = (-a)! ?$,
   ("question", ("eq",
-    ("neg", ("fact", $a$.body)),
-    ("fact", ("parens", ("neg", $a$.body)))
+    ("neg", ("fact", $a$)),
+    ("fact", ("parens", ("neg", $a$)))
   ))
 )
-#assert.eq(
-  lisp-expr($-a!$, grammar),
-  ("neg", ("fact", $a$.body))
+#assert-expr(grammar,
+  $-a!$,
+  ("neg", ("fact", $a$))
 )
 
 
@@ -59,13 +67,13 @@
   unary-sum: (prefix: $+$, prec: 3),
   group: (expr: $(wilds("body"))$)
 )
-#assert.eq(
-  lisp-expr($a + b$, grammar),
-  ("binary-sum", $a$.body, $b$.body)
+#assert-expr(grammar,
+  $a + b$,
+  ("binary-sum", $a$, $b$)
 )
-#assert.eq(
-  lisp-expr($a + (+b)$, grammar),
-  ("binary-sum", $a$.body, ("group", ("unary-sum", $b$.body),))
+#assert-expr(grammar,
+  $a + (+b)$,
+  ("binary-sum", $a$, ("group", ("unary-sum", $b$),))
 )
 
 
@@ -79,23 +87,52 @@
   group: (expr: $(wilds("body"))$, prec: 0),
 )
 
-#assert.eq(
-  lisp-expr($a + b c! dot d$, grammar),
+#assert-expr(grammar,
+  $a + b c! dot d$,
   ("sum",
-    $a$.body,
+    $a$,
     ("dot",
       ("mul",
-        $b$.body,
-        ("fact", $c$.body)
+        $b$,
+        ("fact", $c$)
       ),
-      $d$.body
+      $d$
     )
   )
 )
-#assert.eq(
-  lisp-expr($a (b + c)$, grammar),
+#assert-expr(grammar,
+  $a (b + c)$,
   ("mul",
-    $a$.body,
-    ("group", ("sum", $b$.body, $c$.body)),
+    $a$,
+    ("group", ("sum", $b$, $c$)),
   )
+)
+
+
+// associativity
+
+#let grammar = (
+  add: (infix: $+$, prec: 1, assoc: true),
+  sub: (infix: $-$, prec: 1),
+  mul: (infix: $times$, prec: 2, assoc: true),
+  div: (infix: $slash$, prec: 2, assoc: left),
+  arr: (infix: $->$, prec: 0, assoc: right),
+  group: (expr: $(wilds("group"))$),
+)
+
+#assert-expr(grammar,
+  $a + b + c$,
+  ("add", ($a$, $b$, $c$)),
+)
+#assert-expr(grammar,
+  $a - b - c$,
+  ("sub", ("sub", $a$, $b$), $c$)
+)
+#assert-expr(grammar,
+  $a -> b -> c$,
+  ("arr", $a$, ("arr", $b$, $c$))
+)
+#assert-expr(grammar,
+  $x -> a + p times q + c$,
+  ("arr", $x$, ("add", ($a$, ("mul", ($p$, $q$)), $c$)))
 )
