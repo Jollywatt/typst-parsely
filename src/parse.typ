@@ -78,7 +78,7 @@
         let it = tokens.first()
 
         // recurse into content
-        if type(it) == content {
+        if type(it) == content and false {
           let kind = repr(it.func())
           if kind not in ("symbol", "text") {
             tokens = tokens.slice(1)
@@ -88,8 +88,6 @@
               slots: (func: it.func(), fields: it.fields()),
             )
           }
-        } else {
-          panic()
         }
       }
 

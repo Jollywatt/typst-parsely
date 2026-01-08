@@ -11,7 +11,9 @@
   let (kind, pattern) = op.pairs().first()
   let op = match.substitute-wilds(pattern, it)
   
-  if kind == "infix" {
+  if "args" in it {
+    it.args.join(op)
+  } else if kind == "infix" {
     $it.left op it.right$
   } else if kind == "postfix" {
     $it.left op$
