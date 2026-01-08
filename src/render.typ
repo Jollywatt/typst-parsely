@@ -3,22 +3,23 @@
 
 #let render-node(it, grammar) = {
   if it.head == "content" {
-    return util.dict-to-content(it.func, it.fields)
-  } 
+    let (fn, ..pos) = it.args
+    return fn(..pos, ..it.slots)
+  }
   
   let op = grammar.at(it.head)
 
   let (kind, pattern) = op.pairs().first()
-  let op = match.substitute-wilds(pattern, it)
+  let op = match.substitute-slots(pattern, it.slots)
+
+  let args = it.args
   
-  if "args" in it {
-    it.args.join(op)
-  } else if kind == "infix" {
-    $it.left op it.right$
+  if kind == "infix" {
+    $args.join(op)$
   } else if kind == "postfix" {
-    $it.left op$
+    $args.first() op$
   } else if kind == "prefix" {
-    $op it.right$
+    $op args.first()$
   } else if kind == "expr" {
     op
   } else {

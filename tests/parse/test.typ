@@ -8,11 +8,14 @@
 )
 
 #assert.eq(parse($a$, grammar).first(), $a$.body)
-#assert.eq(parse($1 + 1$, grammar).first(), (head: "sum", left: $1$.body, right: $1$.body))
+#assert.eq(
+  parse($1 + 2$, grammar).first(),
+  (head: "sum", args: ($1$.body, $2$.body), slots: (:)),
+)
 
 #let assert-expr(grammar, it, target) = {
   let (tree, rest) = parse(it, grammar)
-  let lisp = util.walk(tree, post: it => it.values())
+  let lisp = util.walk(tree, post: it => (it.head, ..it.args, ..it.slots.values()))
   target = util.walk-array(target, leaf: it => {
     if type(it) == content and it.func() == math.equation {
       it.body
@@ -42,7 +45,7 @@
   neg: (prefix: $-$, prec: 2),
   fact: (postfix: $!$, prec: 3),
   question: (postfix: $?$, prec: 0),
-  parens: (expr: $(wilds("body"))$),
+  parens: (expr: $(slots("body"))$),
 )
 
 #assert-expr(grammar,
@@ -65,7 +68,7 @@
 #let grammar = (
   binary-sum: (infix: $+$, prec: 1),
   unary-sum: (prefix: $+$, prec: 3),
-  group: (expr: $(wilds("body"))$)
+  group: (expr: $(slots("body"))$)
 )
 #assert-expr(grammar,
   $a + b$,
@@ -84,7 +87,7 @@
   dot: (infix: $dot$, prec: 2),
   fact: (postfix: $!$, prec: 4),
   mul: (infix: $$, prec: 3),
-  group: (expr: $(wilds("body"))$, prec: 0),
+  group: (expr: $(slots("body"))$, prec: 0),
 )
 
 #assert-expr(grammar,
@@ -117,12 +120,12 @@
   mul: (infix: $times$, prec: 2, assoc: true),
   div: (infix: $slash$, prec: 2, assoc: left),
   arr: (infix: $->$, prec: 0, assoc: right),
-  group: (expr: $(wilds("group"))$),
+  group: (expr: $(slots("group"))$),
 )
 
 #assert-expr(grammar,
   $a + b + c$,
-  ("add", ($a$, $b$, $c$)),
+  ("add", $a$, $b$, $c$),
 )
 #assert-expr(grammar,
   $a - b - c$,
@@ -134,5 +137,5 @@
 )
 #assert-expr(grammar,
   $x -> a + p times q + c$,
-  ("arr", $x$, ("add", ($a$, ("mul", ($p$, $q$)), $c$)))
+  ("arr", $x$, ("add", $a$, ("mul", $p$, $q$), $c$))
 )

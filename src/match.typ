@@ -1,19 +1,19 @@
 #import "util.typ"
 
-#let wild(name, many: false) = metadata((wild: name, many: many))
-#let wilds = wild.with(many: true)
+#let slot(name, many: false) = metadata((slot: name, many: many))
+#let slots = slot.with(many: true)
 
-#let is-wild(it) = (
+#let is-slot(it) = (
   type(it) == content and
   it.func() == metadata and
   type(it.value) == dictionary and
-  "wild" in it.value
+  "slot" in it.value
 )
-#let wild-name(it) = it.value.wild
+#let slot-name(it) = it.value.slot
 
-#let substitute-wilds(it, map) = util.walk-content(it, post: it => {
-  if is-wild(it) and wild-name(it) in map {
-    map.at(wild-name(it))
+#let substitute-slots(it, map) = util.walk-content(it, post: it => {
+  if is-slot(it) and slot-name(it) in map {
+    map.at(slot-name(it))
   } else {
     it
   }
@@ -69,21 +69,21 @@
       p = [ ]
     }
 
-    if is-wild(p) and p.value.many == true {
+    if is-slot(p) and p.value.many == true {
       let p-next = pattern.at(pi + 1, default: none)
       if p-next == none {
-        // trailing wild matches rest of expr
-        ctx.insert(wild-name(p), expr.slice(ei).join())
+        // trailing slot matches rest of expr
+        ctx.insert(slot-name(p), expr.slice(ei).join())
         
       } else {
-        // wild matches until next pattern token is seen
+        // slot matches until next pattern token is seen
         let ei-end = ei
         while ei-end < expr.len() {
           let m = match(p-next, expr.at(ei-end), ctx: ctx)
           if m != false { break }
           ei-end += 1
         }
-        ctx.insert(wild-name(p), expr.slice(ei, ei-end).join())
+        ctx.insert(slot-name(p), expr.slice(ei, ei-end).join())
         pi += 1
         ei = ei-end
         continue 
@@ -130,8 +130,8 @@
 
 #let match(pattern, expr, ctx: (:)) = {
   
-  if is-wild(pattern) {
-    let name = wild-name(pattern)
+  if is-slot(pattern) {
+    let name = slot-name(pattern)
     if name in ctx {
       if ctx.at(name) != expr { return false }
     } else {

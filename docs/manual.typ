@@ -10,6 +10,7 @@ version #typst-toml.package.version
 
 #context outline(target: selector(heading).after(here()))
 
+#set list(marker: [--])
 
 = Tutorial
 
@@ -21,12 +22,12 @@ version #typst-toml.package.version
   sub: (infix: $-$, prec: 1),
   dot: (infix: $dot$, prec: 2),
   fact: (postfix: $!$, prec: 4),
-  pow: (expr: $wild("base")^wild("exp")$),
+  pow: (expr: $slot("base")^slot("exp")$),
   mul: (infix: $$, prec: 3),
-  group: (expr: $(wilds("body"))$, prec: 0),
+  group: (expr: $(slots("body"))$, prec: 0),
 )
 
-#let expr = $a + b bold(u) dot bold(v) + c! = 1 - 2 - 3$
+#let expr = $a + b bold(u) dot bold(v) + c! = (1 - (2 - 3))$
 #let (tree, rest) = parse(expr, grammar)
 #expr
 
@@ -36,16 +37,11 @@ version #typst-toml.package.version
 })
 
 #util.walk(tree, post: it => {
-  let (head, ..rest) = it.values()
+  let (head, args, slots) = it.values()
   box(stroke: (left: 1pt), inset: (left: 5pt))[
     #emph(head)
-    #rest.map(i => {
-      if type(i) == array {
-        i.map(enum.item).join()
-      } else {
-        enum.item[#i]
-      }
-    }).join()
+    #args.map(i => enum.item[#i]).join()
+    #slots.pairs().map(((k, v)) => list.item[#k:\ #v]).join()
   ]
 })
 

@@ -78,14 +78,20 @@
         let it = tokens.first()
 
         // recurse into content
-        if type(it) == content and false {
+        if type(it) == content {
           let kind = repr(it.func())
           if kind not in ("symbol", "text") {
             tokens = tokens.slice(1)
+            let named = it.fields()
+            let pos = ()
+            for n in util.content-positional-args.at(kind) {
+              pos.push(named.remove(n))
+            }
             op = (
               name: "content",
               kind: "expr",
-              slots: (func: it.func(), fields: it.fields()),
+              args: (it.func(), ..pos),
+              slots: named,
             )
           }
         }
@@ -121,13 +127,15 @@
       }
       left = tokens.first()
       tokens = tokens.slice(1)
+    } else if op.name == "content" {
+      left = (head: "content", args: op.args, slots: op.slots)
     } else if op.kind == "expr" {
-      left = (head: op.name, ..op.slots)
+      left = (head: op.name, args: (), slots: op.slots)
     
     // prefix
     } else if op.kind == "prefix" {
       let (right, rest) = parse-expr(tokens, op.prec)
-      left = (head: op.name, ..op.slots, right: right)
+      left = (head: op.name, args: (right,), slots: op.slots)
       tokens = rest
     }
 
@@ -138,7 +146,7 @@
       
       if op.kind == "postfix" {
         if op.prec < min-prec { break }
-        left = (head: op.name, left: left)
+        left = (head: op.name, args: (left,), slots: (:))
         tokens = subtokens
 
       } else if op.kind == "infix" {
@@ -146,22 +154,24 @@
         
         let assoc = op.at("assoc", default: alignment.left)
         if assoc == true {
-          // N-ary: collect all operands for this operator
+          // n-ary
           let args = (left,)
           while true {
             let (right, rest) = parse-expr(subtokens, op.prec + 1)
             args.push(right)
             tokens = rest
             let (next-op, next-tokens) = parse-op(tokens, ctx: (left: right))
-            if next-op == none or next-op.name != op.name or next-op.prec < min-prec { break }
+            if next-op == none { break }
+            if next-op.name != op.name { break }
+            if next-op.prec < min-prec { break }
             subtokens = next-tokens
           }
-          left = (head: op.name, args: args)
+          left = (head: op.name, args: args, slots: (:))
         } else {
-          // Binary with associativity
+          // binary
           let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
           let (right, rest) = parse-expr(subtokens, right-prec)
-          left = (head: op.name, left: left, right: right)
+          left = (head: op.name, args: (left, right), slots: (:))
           tokens = rest
         }
 

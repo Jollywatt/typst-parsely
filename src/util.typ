@@ -14,56 +14,41 @@
 }
 #let flatten-sequence(seq) = as-array(seq).map(as-array).flatten()
 
-#let squeeze-space(seq) = seq.filter(it => not is-space(it))
-
 #let is-node(it) = type(it) == dictionary and "head" in it
 
 #let walk(it, pre: it => it, post: it => it, leaf: it => it) = {
   if not is-node(it) { return leaf(it) }
   let w(it) = walk(it, pre: pre, post: post, leaf: leaf)
-  post(pre(it).pairs().map(((k, v)) => {
-    if type(v) == array { (k, v.map(w)) }
-    else if is-node(v) { (k, w(v)) }
-    else { (k, leaf(v)) }
-  }).to-dict())
+  it = pre(it)
+  it.args = it.args.map(w)
+  it.slots = it.slots.keys().zip(it.slots.values().map(w)).to-dict()
+  post(it)
 }
+
 
 #let walk-array(it, pre: it => it, post: it => it, leaf: it => it) = {
   if type(it) != array { return leaf(it) }
   post(pre(it).map(walk-array.with(pre: pre, post: post, leaf: leaf)))
 }
 
-
-#let dict-to-content(fn, fields) = {
-  if repr(fn) in ("symbol", "raw") {
-    let (text, ..rest) = fields
-    fn(text, ..rest)
-  } else if repr(fn) == "styled" {
-    let (child, styles) = fields
-    fn(child, styles)
-  } else if fn == metadata {
-    let (value,) = fields
-    metadata(value)
-  } else if repr(fn) == "sequence" {
-    fields.children.map(it => [#it]).join()
-  } else if repr(fn) == "lr" {
-    let (body,) = fields
-    math.lr(body)
-  } else if fn == math.equation {
-    let (body, block) = fields
-    math.equation(body, block: block)
-  } else if fn == math.attach {
-    let (base, ..rest) = fields
-    math.attach(base, ..rest)
-  } else if fn == math.primes {
-    let (count, ..rest) = fields
-    math.primes(count)
-  } else if fn == math.root {
-    let (radicand, ..rest) = fields
-    math.root([8], [d])
-  } else if fn == math.underbrace {
-    let (body, annotation, ..rest) = fields
-    math.underbrace(body, annotation, ..rest)
+#let content-positional-args = (
+  symbol: ("text",),
+  styled: ("child", "styles"),
+  metadata:  ("value",),
+  lr: ("body",),
+  equation: ("body",),
+  attach: ("base",),
+  primes: ("count",),
+)
+#let construct-content(fn, fields) = {
+  if repr(fn) == "sequence" {
+    fields.children.join()
+  } else if repr(fn) in content-positional-args {
+    let pos = ()
+    for k in content-positional-args.at(repr(fn)) {
+      pos.push(fields.remove(k))
+    }
+    fn(..pos, ..fields)
   } else {
     let fname = repr(fn)
     fn(..fields)
@@ -79,21 +64,15 @@
     else if type(it) == content { (k, w(v)) }
     else { (k, v) }
   }).to-dict()
-  post(dict-to-content(it.func(), fields))
+  post(construct-content(it.func(), fields))
 }
 
 
 #let tree-node-depths(tree) = walk(tree, post: it => {
   let depth = 0
-  for (k, v) in it {
-    if type(v) == dictionary and "depth" in v {
-      depth = calc.max(depth, v.depth)
-    } else if type(v) == array {
-      for vi in v {
-        if type(vi) == dictionary and "depth" in vi {
-          if vi.depth > depth { depth = vi.depth }
-        }
-      }
+  for sub in it.args + it.slots.values() {
+    if type(sub) == dictionary and "depth" in sub {
+      depth = calc.max(depth, sub.depth)
     }
   }
   it + (depth: depth + 1)
