@@ -137,7 +137,7 @@
     tokens = rest
   }
 
-  
+
 
   // infix and postfix
   while tokens.len() > 0 {
@@ -158,6 +158,7 @@
         let args = (left,)
         while true {
           let (right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
+          if right == none { break }
           args.push(right)
           tokens = rest
           let (next-op, next-tokens) = parse-op(tokens, ctx: (left: right))

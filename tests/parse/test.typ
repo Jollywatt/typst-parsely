@@ -87,7 +87,7 @@
   dot: (infix: $dot$, prec: 2),
   fact: (postfix: $!$, prec: 4),
   mul: (infix: $$, prec: 3),
-  group: (expr: $(slots("body"))$, prec: 0),
+  group: (expr: $(slots("body"))$),
 )
 
 #assert-expr(grammar,
@@ -138,4 +138,14 @@
 #assert-expr(grammar,
   $x -> a + p times q + c$,
   ("arr", $x$, ("add", $a$, ("mul", $p$, $q$), $c$))
+)
+
+#let grammar = (
+  add: (infix: $+$, prec: 1, assoc: true),
+  mul: (infix: $$, prec: 3, assoc: true),
+)
+
+#assert-expr(grammar,
+  $a + b c$,
+  ("add", $a$, ("mul", $b$, $c$))
 )
