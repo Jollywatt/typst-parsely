@@ -54,7 +54,11 @@
   let is-tight = false
   let is-loose = false
   let p-space = false
-  while pi < pattern.len() and ei < expr.len() {
+  while pi < pattern.len() {
+
+    // no match if expression tokens run out before whole pattern has used
+    if ei >= expr.len() { return false }
+
     let p = pattern.at(pi)
     let e = expr.at(ei)
 
@@ -160,8 +164,8 @@
 
     let m = match-sequence(pattern, expr, ctx: ctx, match: match)
     if m == false { return false }
-    let (m, rest) = m
-    ctx = m
+    let (new-ctx, rest) = m
+    ctx = new-ctx
 
 
   } else {

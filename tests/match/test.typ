@@ -25,6 +25,10 @@
 #assert.eq(match($a + b$, $a + b + c$), (:))
 
 
+#assert.eq(match($f(slot("arg")).$, $f(x)$), false)
+#assert.eq(match($f(slot("arg"))$, $f(x)$), (arg: $x$.body))
+
+
 // whitespace sensitive matching
 
 #assert.eq(match($a tight + tight b$, $a+b$), (:))
