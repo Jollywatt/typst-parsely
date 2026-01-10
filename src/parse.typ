@@ -38,7 +38,7 @@
       let (slots, tokens) = m
       let op = (
         kind: spec.keys().first(),
-        ..if "prec" in spec { (prec: spec.prec) },
+        ..if kind != "expr" { (prec: spec.at("prec", default: 0)) },
         ..if kind == "infix" { (assoc: spec.at("assoc", default: alignment.left)) },
         slots: slots,
       )
