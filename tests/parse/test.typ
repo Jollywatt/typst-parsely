@@ -149,3 +149,26 @@
   $a + b c$,
   ("add", $a$, ("mul", $b$, $c$))
 )
+
+// tightness and looseness
+
+#let grammar = (
+  eq: (infix: $=$, prec: 1),
+  neg: (prefix: $-$, prec: 2),
+  fact: (postfix: $tight !$, prec: 3),
+  assert: (postfix: $loose !$, prec: 0),
+  question: (postfix: $loose ?$, prec: 0),
+)
+
+#assert-expr(grammar,
+  $-a! = b !$,
+  ("assert", ("eq", ("neg", ("fact", $a$)), $b$)),
+)
+#assert-expr(grammar,
+  $P! ?$,
+  ("question", ("fact", $P$)),
+)
+#assert-expr(grammar,
+  $P!!$,
+  ("fact", ("fact", $P$)),
+)

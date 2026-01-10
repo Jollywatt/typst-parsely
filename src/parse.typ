@@ -33,10 +33,6 @@
         if kind in ("infix", "postfix") { return false }
       }
 
-      let n-ahead = pattern.len()
-      if n-ahead > tokens.len() { return false }
-      let slice = tokens.slice(0, n-ahead)
-
       let m = match-sequence(pattern, tokens, match: match)
       if m == false { return false }
       let (slots, tokens) = m
@@ -121,6 +117,7 @@
       (left, ..tokens) = tokens
       if not util.is-space(left) { break }
     }
+    let _ = tokens
 
   } else if op.name == "content" {
     // parsing doesn't recurse into content args??
@@ -176,7 +173,7 @@
         let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
         let (right, rest) = parse(subtokens, grammar, min-prec: right-prec)
         left = (head: op.name, args: (left, right), slots: (:))
-        
+
         tokens = rest
         continue
       }
