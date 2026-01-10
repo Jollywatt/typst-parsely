@@ -1,3 +1,5 @@
+
+
 #let is-space(it) = {
   if type(it) == str { return it.trim() == "" }
   if type(it) == content {
@@ -37,15 +39,7 @@
   post(pre(it).map(walk-array.with(pre: pre, post: post, leaf: leaf)))
 }
 
-#let content-positional-args = (
-  symbol: ("text",),
-  styled: ("child", "styles"),
-  metadata:  ("value",),
-  lr: ("body",),
-  equation: ("body",),
-  attach: ("base",),
-  primes: ("count",),
-)
+#let content-positional-args = json("content-positional-args.json")
 #let construct-content(fn, fields) = {
   if repr(fn) == "sequence" {
     fields.children.join()

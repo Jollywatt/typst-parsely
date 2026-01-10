@@ -1,0 +1,257 @@
+{
+  "accent": [
+    "base",
+    "accent"
+  ],
+  "artifact": [
+    "body"
+  ],
+  "attach": [
+    "base"
+  ],
+  "bibliography": [
+    "sources"
+  ],
+  "binom": [
+    "upper",
+    "lower"
+  ],
+  "cancel": [
+    "body"
+  ],
+  "caption": [
+    "body"
+  ],
+  "cell": [
+    "body"
+  ],
+  "cite": [
+    "key"
+  ],
+  "cite-group": [
+    "children"
+  ],
+  "class": [
+    "class",
+    "body"
+  ],
+  "cubic": [
+    "control_start",
+    "control_end",
+    "end"
+  ],
+  "direct-link": [
+    "loc",
+    "body",
+    "alt"
+  ],
+  "elem": [
+    "tag",
+    "body"
+  ],
+  "emph": [
+    "body"
+  ],
+  "entry": [
+    "level",
+    "element"
+  ],
+  "equation": [
+    "body"
+  ],
+  "figure": [
+    "body"
+  ],
+  "footnote": [
+    "body"
+  ],
+  "frac": [
+    "num",
+    "denom"
+  ],
+  "h": [
+    "amount"
+  ],
+  "heading": [
+    "body"
+  ],
+  "hide": [
+    "body"
+  ],
+  "highlight": [
+    "body"
+  ],
+  "image": [
+    "source"
+  ],
+  "item": [
+    "number",
+    "body"
+  ],
+  "layout": [
+    "func"
+  ],
+  "limits": [
+    "body"
+  ],
+  "line": [
+    "number",
+    "count",
+    "text",
+    "body"
+  ],
+  "link": [
+    "dest",
+    "body"
+  ],
+  "link-marker": [
+    "body",
+    "alt"
+  ],
+  "lr": [
+    "body"
+  ],
+  "metadata": [
+    "value"
+  ],
+  "mid": [
+    "body"
+  ],
+  "move": [
+    "start"
+  ],
+  "op": [
+    "text"
+  ],
+  "overbrace": [
+    "body",
+    "annotation"
+  ],
+  "overbracket": [
+    "body",
+    "annotation"
+  ],
+  "overline": [
+    "body"
+  ],
+  "overparen": [
+    "body",
+    "annotation"
+  ],
+  "overshell": [
+    "body",
+    "annotation"
+  ],
+  "pad": [
+    "body"
+  ],
+  "page": [
+    "body"
+  ],
+  "par": [
+    "body"
+  ],
+  "par-line-marker": [
+    "numbering",
+    "number_align",
+    "number_margin",
+    "number_clearance"
+  ],
+  "pdf-marker-tag": [
+    "kind",
+    "body"
+  ],
+  "place": [
+    "alignment",
+    "body"
+  ],
+  "primes": [
+    "count"
+  ],
+  "quad": [
+    "control",
+    "end"
+  ],
+  "quote": [
+    "body"
+  ],
+  "raw": [
+    "text"
+  ],
+  "rect": [
+    "body"
+  ],
+  "ref": [
+    "target"
+  ],
+  "repeat": [
+    "body"
+  ],
+  "root": [
+    "index",
+    "radicand"
+  ],
+  "scripts": [
+    "body"
+  ],
+  "sequence": [
+    "children"
+  ],
+  "smallcaps": [
+    "body"
+  ],
+  "stretch": [
+    "body"
+  ],
+  "strike": [
+    "body"
+  ],
+  "strong": [
+    "body"
+  ],
+  "styled": [
+    "child",
+    "styles"
+  ],
+  "sub": [
+    "body"
+  ],
+  "super": [
+    "body"
+  ],
+  "symbol": [
+    "text"
+  ],
+  "tag": [
+    "tag"
+  ],
+  "text": [
+    "body",
+    "text"
+  ],
+  "title": [
+    "body"
+  ],
+  "underbrace": [
+    "body",
+    "annotation"
+  ],
+  "underbracket": [
+    "body",
+    "annotation"
+  ],
+  "underline": [
+    "body"
+  ],
+  "underparen": [
+    "body",
+    "annotation"
+  ],
+  "undershell": [
+    "body",
+    "annotation"
+  ],
+  "v": [
+    "amount"
+  ]
+}
