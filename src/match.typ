@@ -1,13 +1,16 @@
 #import "util.typ"
 
-#let slot(name, many: false) = metadata((slot: name, many: many))
+#let slot(name, ..args) = metadata((slot: name, ..args.named()))
 #let slots = slot.with(many: true)
 
-#let is-slot(it) = (
+#let is-slot(it, ..args) = (
   type(it) == content and
   it.func() == metadata and
   type(it.value) == dictionary and
-  "slot" in it.value
+  "slot" in it.value and
+  args.named().pairs().all(((k, v)) => {
+    it.value.at(k, default: false) == v
+  })
 )
 #let slot-name(it) = it.value.slot
 
@@ -73,7 +76,7 @@
       p = [ ]
     }
 
-    if is-slot(p) and p.value.many == true {
+    if is-slot(p, many: true) {
       let p-next = pattern.at(pi + 1, default: none)
       if p-next == none {
         // trailing slot matches rest of expr
@@ -82,10 +85,19 @@
       } else {
         // slot matches until next pattern token is seen
         let ei-end = ei
-        while ei-end < expr.len() {
-          let m = match(p-next, expr.at(ei-end), ctx: ctx)
-          if m != false { break }
-          ei-end += 1
+        if is-slot(p, greedy: false) {
+          while ei-end < expr.len() {
+            let m = match(p-next, expr.at(ei-end), ctx: ctx)
+            if m != false { break }
+            ei-end += 1
+          }
+        } else {
+          ei-end = expr.len() - 1
+          while ei-end >= ei {
+            let m = match(p-next, expr.at(ei-end), ctx: ctx)
+            if m != false { break }
+            ei-end -= 1
+          }
         }
         ctx.insert(slot-name(p), expr.slice(ei, ei-end).join())
         pi += 1
@@ -136,6 +148,9 @@
   
   if is-slot(pattern) {
     let name = slot-name(pattern)
+
+    // by default, don't let slots match whitespace
+    if util.is-space(expr) { return false }
     if name in ctx {
       if ctx.at(name) != expr { return false }
     } else {

@@ -72,7 +72,7 @@
       let it = tokens.first()
 
       // recurse into content
-      if type(it) == content {
+      if type(it) == content and false {
         let kind = repr(it.func())
         if kind not in ("symbol", "text") {
           tokens = tokens.slice(1)
@@ -91,12 +91,13 @@
       }
     }
 
-    // parse pattern slots
+    // try to parse pattern slots
     if op != none {
       for (key, slot) in op.slots {
         if type(slot) != content { continue }
-        let (tree, rest) = parse(slot, grammar, min-prec: 0)
-        if rest.len() != 0 { return (none, tokens) }
+        let (tree, rest) = parse(slot, grammar, min-prec: -float.inf)
+        // if the whole slot doesn't parse to the end, keep unparsed
+        if rest.len() != 0 { continue }
         op.slots.at(key) = tree
         
       }
@@ -156,9 +157,13 @@
         left = (head: op.name, args: (left,), slots: (:))
         while true {
           let (right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
-          if right == none { break }
-          left.args.push(right)
           tokens = rest // consumed op + right
+
+          // is this better to include??
+          // controls what happens with e.g., $1 + 2 + $
+          // if right == none { break }
+
+          left.args.push(right)
 
           // if followed by same operator, absorb
           let (next-op, rest) = parse-op(rest, ctx: (left: right))
@@ -178,9 +183,14 @@
         continue
       }
 
+    } else if op.kind == "expr" {
+      // encountered two consecutive tokens
+      // which are not joined by any operator
+      // leave unparsed
+      break
     }
     
-    panic()
+    panic(op)
 
   }
   

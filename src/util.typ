@@ -1,7 +1,13 @@
-#let is-space(it) = (
-  repr(it.func()) == "space" or 
-  repr(it.func()) == "symbol" and it.fields().text.trim() == ""
-)
+#let is-space(it) = {
+  if type(it) == str { return it.trim() == "" }
+  if type(it) == content {
+    if repr(it.func()) == "space" { return true }
+    if repr(it.func()) == "symbol" {
+      return it.fields().text.trim() == ""
+    }
+  }
+  return false
+}
 
 #let is-content-type(name, it) = type(it) == content and repr(it.func()) == name
 #let is-equation = is-content-type.with("equation")

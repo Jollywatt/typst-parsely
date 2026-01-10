@@ -46,3 +46,16 @@
 #assert.eq(match($slot("a") loose slot("b")$, $n!$), false)
 #assert.eq(match($slot("a") loose slot("b")$, $n !$), (a: $n$.body, b: $!$.body))
 
+
+#let assert-match(pattern, expr, slots) = {
+  if type(slots) == dictionary {
+    slots = slots.keys().zip(slots.values().map(unwrap)).to-dict()
+  }
+  assert.eq(match(pattern, expr), slots)
+}
+// greedy matching
+#assert-match(
+  $[slots("head"), slots("tail")]$,
+  $[1, 2, 3]$,
+  (head: $1$, tail: $2, 3$)
+)
