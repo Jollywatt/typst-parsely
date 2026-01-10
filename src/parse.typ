@@ -14,7 +14,7 @@
 // prefix operator with "slots" (capture groups) for the
 // summation variable and limits.
 
-#let parse(it, grammar, min-prec: 0) = {
+#let parse(it, grammar, min-prec: -float.inf) = {
 
   let tokens = flatten-sequence(as-array(unwrap(it)))
   if tokens.len() == 0 { return (none, tokens) }
@@ -112,16 +112,15 @@
 
 
   let left = none
-
   let (op, tokens) = parse-op(tokens, ctx: (left: left))
 
+  // consume literal token
   if op == none {
-    if tokens.len() == 0 { return (none, ()) }
-    while util.is-space(tokens.first()) {
-      tokens = tokens.slice(1)
+    while true {
+      if tokens.len() == 0 { return (none, ()) }
+      (left, ..tokens) = tokens
+      if not util.is-space(left) { break }
     }
-    left = tokens.first()
-    tokens = tokens.slice(1)
 
   } else if op.name == "content" {
     // parsing doesn't recurse into content args??
@@ -134,7 +133,7 @@
   } else if op.kind == "prefix" {
     let (right, rest) = parse(tokens, grammar, min-prec: op.prec)
     left = (head: op.name, args: (right,), slots: op.slots)
-    tokens = rest
+    tokens = rest // consumed op + right
   }
 
 
@@ -147,7 +146,9 @@
     if op.kind == "postfix" {
       if op.prec < min-prec { break }
       left = (head: op.name, args: (left,), slots: (:))
-      tokens = subtokens
+
+      tokens = subtokens // consumed op
+      continue
 
     } else if op.kind == "infix" {
       if op.prec < min-prec { break }
@@ -155,30 +156,35 @@
       let assoc = op.at("assoc", default: alignment.left)
       if assoc == true {
         // n-ary
-        let args = (left,)
+        left = (head: op.name, args: (left,), slots: (:))
         while true {
           let (right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
           if right == none { break }
-          args.push(right)
-          tokens = rest
-          let (next-op, next-tokens) = parse-op(tokens, ctx: (left: right))
+          left.args.push(right)
+          tokens = rest // consumed op + right
+
+          // if followed by same operator, absorb
+          let (next-op, rest) = parse-op(rest, ctx: (left: right))
           if next-op == none { break }
           if next-op.name != op.name { break }
           if next-op.prec < min-prec { break }
-          subtokens = next-tokens
+          subtokens = rest
         }
-        left = (head: op.name, args: args, slots: (:))
+        continue
       } else {
         // binary
         let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
         let (right, rest) = parse(subtokens, grammar, min-prec: right-prec)
         left = (head: op.name, args: (left, right), slots: (:))
+        
         tokens = rest
+        continue
       }
 
-    } else {
-      break
     }
+    
+    panic()
+
   }
   
   return (left, tokens)
