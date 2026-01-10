@@ -1,7 +1,7 @@
 #import "util.typ"
 #import "match.typ"
 
-#let render-node(it, grammar) = {
+#let render(it, grammar) = {
   if it.head == "content" {
     let (fn, ..pos) = it.args
     return fn(..pos, ..it.slots)
