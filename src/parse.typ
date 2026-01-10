@@ -149,21 +149,26 @@
       continue
 
     } else if op.kind == "infix" {
+
+      // nothing left for right of infix
+      // leave operator unparsed
+      if subtokens.len() == 0 { break }
+
       if op.prec < min-prec { break }
       
       let assoc = op.at("assoc", default: alignment.left)
       if assoc == true {
         // n-ary
         left = (head: op.name, args: (left,), slots: (:))
+        let abort = false
         while true {
           let (right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
-          tokens = rest // consumed op + right
 
-          // is this better to include??
-          // controls what happens with e.g., $1 + 2 + $
-          // if right == none { break }
+          // don't allow rhs of operator to be none
+          if right == none { break }
 
           left.args.push(right)
+          tokens = rest // consumed op + right
 
           // if followed by same operator, absorb
           let (next-op, rest) = parse-op(rest, ctx: (left: right))
@@ -172,11 +177,16 @@
           if next-op.prec < min-prec { break }
           subtokens = rest
         }
+        if abort { break }
         continue
       } else {
         // binary
         let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
         let (right, rest) = parse(subtokens, grammar, min-prec: right-prec)
+        
+        // don't allow rhs of operator to be none
+        if right == none { break }
+
         left = (head: op.name, args: (left, right), slots: (:))
 
         tokens = rest

@@ -172,3 +172,25 @@
   $P!!$,
   ("fact", ("fact", $P$)),
 )
+
+
+// trailing tokens
+
+#let grammar = (
+  add: (infix: $+$, assoc: true, prec: 1),
+  sub: (infix: $-$, assoc: left, prec: 1),
+)
+#assert.eq(
+  parse($a +$, grammar),
+  ($a$.body, ([ ], $+$.body))
+)
+#assert.eq(
+  parse($a + b + $, grammar),
+  ((head: "add", args:($a$.body, $b$.body), slots: (:)),
+  ([ ], $+$.body))
+)
+#assert.eq(
+  parse($a - b - $, grammar),
+  ((head: "sub", args:($a$.body, $b$.body), slots: (:)),
+  ([ ], $-$.body))
+)
