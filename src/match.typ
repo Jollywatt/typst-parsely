@@ -1,7 +1,14 @@
 #import "util.typ"
 
-#let slot(name, ..args) = metadata((slot: name, ..args.named()))
-#let slots = slot.with(many: true)
+#let slot(name, ..args) = {
+  let (name, many, greedy) = name.match(regex("([^*?]*)(\*?)(\??)")).captures
+  metadata((
+    slot: name,
+    many: many == "*",
+    greedy: greedy != "?",
+    ..args.named(),
+  ))
+}
 
 #let is-slot(it, ..args) = (
   type(it) == content and

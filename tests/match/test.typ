@@ -56,12 +56,12 @@
 )
 
 #assert-match(
-  $[slots("seq")]$,
+  $[slot("seq*")]$,
   $[1, 2, 3]$,
   (seq: $1, 2, 3$.body),
 )
 #assert-match(
-  $[slots("left"), slots("right")]$,
+  $[slot("left*"), slot("right*")]$,
   $[a b c, x y z]$,
   (left: $a b c$.body, right: $x y z$.body),
 )
@@ -87,12 +87,12 @@
 #assert-match($a tight + b$, $a +b$, false)
 
 #assert-match(
-  $slot("fn") tight (slots("args"))$,
+  $slot("fn") tight (slot("args*"))$,
   $f(x)$,
   (fn: $f$.body, args: $x$.body),
 )
 #assert-match(
-  $slot("fn") tight (slots("args"))$,
+  $slot("fn") tight (slot("args*"))$,
   $f (x)$,
   false,
 )
@@ -111,15 +111,16 @@
 
 
 
-// greedy matching
+// greedy and lazy matching
 
 #assert-match(
-  $[slots("head"), slots("tail")]$,
-  $[1, 2, 3]$,
-  (head: $1$, tail: $2, 3$),
-)
-#assert-match(
-  $[slots("leading", greedy: #true), slots("last")]$,
+  $[slot("leading*"), slot("last*")]$,
   $[1, 2, 3]$,
   (leading: $1, 2$, last: $3$),
+)
+
+#assert-match(
+  $[slot("head*?"), slot("tail*")]$,
+  $[1, 2, 3]$,
+  (head: $1$, tail: $2, 3$),
 )
