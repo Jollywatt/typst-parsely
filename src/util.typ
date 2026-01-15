@@ -72,7 +72,7 @@
 }
 
 
-#let tree-node-depths(tree) = walk(tree, post: it => {
+#let node-depths(tree) = walk(tree, post: it => {
   let depth = 0
   for sub in it.args + it.slots.values() {
     if type(sub) == dictionary and "depth" in sub {
