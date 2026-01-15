@@ -124,3 +124,17 @@
   $[1, 2, 3]$,
   (head: $1$, tail: $2, 3$),
 )
+
+
+// matching content
+#assert-match(
+  math.frac,
+  $a/b$.body,
+  (num: $a$, denom: $b$),
+)
+#assert-match(
+  rect,
+  rect(stroke: 5pt, fill: blue),
+  (stroke: stroke(5pt), fill: blue),
+)
+

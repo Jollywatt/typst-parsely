@@ -25,6 +25,25 @@
 
     // test whether tokens possibly begin with given operator
     let match-op(spec, tokens) = {
+      if type(spec) == function {
+        let m = match-sequence((spec,), tokens, match: match)
+        if m == false { return false }
+        let (slots, tokens) = m
+        let pos-names = content-positional-args.at(repr(spec), default: ())
+        let named = slots
+        let pos = ()
+        for name in pos-names {
+          pos.push(named.remove(name))
+        }
+        let op = (
+          kind: function,
+          fn: spec,
+          args: pos,
+          slots: named
+        )
+        return (op, tokens)
+      }
+
       let (kind, pattern) = spec.pairs().first()
       let pattern = as-array(unwrap(pattern))
 
@@ -37,7 +56,7 @@
       if m == false { return false }
       let (slots, tokens) = m
       let op = (
-        kind: spec.keys().first(),
+        kind: kind,
         ..if kind != "expr" { (prec: spec.at("prec", default: 0)) },
         ..if kind == "infix" { (assoc: spec.at("assoc", default: alignment.left)) },
         slots: slots,
@@ -119,6 +138,10 @@
       if not util.is-space(left) { break }
     }
     let _ = tokens
+
+  } else if op.kind == function {
+    left = (head: op.name, args: op.args, slots: op.slots)
+    // panic(op)
 
   } else if op.name == "content" {
     // parsing doesn't recurse into content args??

@@ -83,6 +83,7 @@
       p = [ ]
     }
 
+    // pattern is a slot
     if is-slot(p, many: true) {
       let p-next = pattern.at(pi + 1, default: none)
       if p-next == none {
@@ -111,6 +112,7 @@
         ei = ei-end
         continue 
       }
+
 
     } else {
       let m = match(p, e, ctx: ctx)
@@ -164,10 +166,19 @@
       ctx.insert(name, expr)
     }
 
+  // pattern is an uncalled content function
+  } else if type(pattern) == function and type(expr) == content {
+    if pattern == expr.func() {
+      for (k, v) in expr.fields() {
+        ctx.insert(k, v)
+      }
+    } else {
+      return false
+    }
+
+  // pattern is normal content
   } else if type(pattern) == content {
     if type(expr) != content { return false }
-
-
 
     pattern = unwrap(pattern)
     expr = unwrap(expr)

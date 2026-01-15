@@ -9,6 +9,10 @@
   
   let op = grammar.at(it.head)
 
+  if type(op) == function {
+    return op(..it.args, ..it.slots)
+  }
+
   let (kind, pattern) = op.pairs().first()
   let op = match.substitute-slots(pattern, it.slots)
 
