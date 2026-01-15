@@ -45,11 +45,16 @@
     fields.children.join()
   } else if repr(fn) in content-positional-args {
     let pos = ()
-    for k in content-positional-args.at(repr(fn)) {
+    let arg-types = content-positional-args.at(repr(fn))
+    for k in arg-types.at("positional", default: ()) {
       pos.push(fields.remove(k))
+    }
+    if "variadic" in arg-types {
+      pos += fields.at(arg-types.variadic)
     }
     fn(..pos, ..fields)
   } else {
+    panic()
     let fname = repr(fn)
     fn(..fields)
   }

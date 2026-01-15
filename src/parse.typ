@@ -29,17 +29,20 @@
         let m = match-sequence((spec,), tokens, match: match)
         if m == false { return false }
         let (slots, tokens) = m
-        let pos-names = content-positional-args.at(repr(spec), default: ())
-        let named = slots
+
+        let arg-types = content-positional-args.at(repr(spec), default: (positional: ()))
         let pos = ()
-        for name in pos-names {
-          pos.push(named.remove(name))
+        for name in arg-types.at("positional", default: ()) {
+          pos.push(slots.remove(name))
+        }
+        if "variadic" in arg-types {
+          pos += slots.remove(arg-types.variadic)
         }
         let op = (
           kind: function,
           fn: spec,
           args: pos,
-          slots: named
+          slots: slots,
         )
         return (op, tokens)
       }
@@ -97,8 +100,12 @@
           tokens = tokens.slice(1)
           let named = it.fields()
           let pos = ()
-          for n in util.content-positional-args.at(kind) {
+          let arg-kinds = util.content-positional-args.at(kind, default: (positional: ()))
+          for n in arg-kinds.positional {
             pos.push(named.remove(n))
+          }
+          if "variadic" in arg-kinds {
+            pos += named.remove(arg-kinds.variadic)
           }
           op = (
             name: "content",
@@ -118,7 +125,18 @@
         // if the whole slot doesn't parse to the end, keep unparsed
         if rest.len() != 0 { continue }
         op.slots.at(key) = tree
-        
+      }
+
+      // sometimes slots are stored as positional arguments
+      // e.g., for some content functions
+      if "args" in op {
+        for (i, arg) in op.args.enumerate() {
+          if type(arg) != content { continue }
+          let (tree, rest) = parse(arg, grammar, min-prec: -float.inf)
+          // if the whole arg doesn't parse to the end, keep unparsed
+          if rest.len() != 0 { continue }
+          op.args.at(i) = tree
+        }
       }
     }
 
