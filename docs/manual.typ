@@ -6,8 +6,9 @@
 #show "{{VERSION}}": typst-toml.package.version
 #show "{{PACKAGE_NAME}}": typst-toml.package.name
 
+#set page(margin: (x: 25mm, y: 20mm))
 #set heading(numbering: "1.", supplement: none)
-#show heading: it => v(1em) + it + v(1em, weak: true)
+#show heading: it => v(1em) + text(1.2em, it) + v(1em, weak: true)
 #set text(font: "Fira Sans")
 #show raw: set text(1.1em, font: "Fira Code", weight: 500)
 #show link: it => underline(it)
@@ -22,92 +23,15 @@
   }
 }
 
-#let cover-graphic = {
 
-  let hash-color(text) = {
-    import "@preview/jumble:0.0.1"
-    let h = array(jumble.md4(text)).sum()*5deg
-    let s = calc.rem(array(jumble.md4(text.rev())).sum(), 100)*1%
-    color.hsv(h, 80%, 70%)
-  }
-
-  let regions(tree, grammar) = context util.walk(tree, post: it => {
-    let c = hash-color(it.head)
-    show: rect.with(
-      stroke: 2pt + c,
-      fill: c.transparentize(95%),
-    )
-    $ #render(it, grammar) $
-  })
-
-  let grammar = (
-    eq: (infix: $=$, prec: 0),
-    sum: (prefix: $sum_(slot("var") = slot("start"))^slot("stop")$, prec: 2),
-    frac: (match: $slot("num")/slot("denom")$),
-    fact: (postfix: $!$, prec: 3),
-    mul: (infix: $$, prec: 2),
-    pow: (match: $slot("base")^slot("exp")$),
-    call: (match: $slot("fn") tight (slot("args"))$),
-  )
-
-  let eq = $exp(x) = sum_(k = 0)^oo 1/k! x^k$
-  let (tree, rest) = parse(eq, grammar)
-  
-  let sep = text(20pt, $ arrow.t.b $)
-  stack(
-    spacing: 10pt,
-    box(text(15pt, regions(tree, grammar))),
-    sep,
-    util.walk(tree, post: it => {
-      set text(12pt)
-      let c = hash-color(it.head)
-      text(c, strong[#it.head])
-      text(c)[(]
-      {
-        it.at("slots", default: (:)).values()
-        it.at("args", default: ())
-      }.join(text(c)[, ])
-      text(c)[)]
-    }),
-    sep,
-    move(dx: 0.5em, text(12pt, cetz.canvas({
-      let a = util.walk(tree, post: it => {
-        let c = hash-color(it.head)
-        (text(c, strong(it.head)), ..it.args, ..it.slots.values())
-      })
-      cetz.draw.set-style(content: (padding: .1))
-      cetz.tree.tree(a, grow: 0.5, spread: 0)
-    }))),
-  )
-}
-
-#[
-  #set text(15pt)
-  #title[#typst-toml.package.name]
-  Parse equations with Typst
-]
-
-version #typst-toml.package.version
-
-#v(1fr)
-
-#align(center, cover-graphic)
-
-#v(1fr)
-
-#context outline(target: selector(heading).after(here()))
-
-#v(1fr)
-
-#pagebreak()
 
 #let code-fill = oklab(98.17%, -0.005, -0.007)
 #show raw.where(block: true): box.with(width: 100%, inset: 1em, fill: code-fill, stroke: code-fill.darken(30%))
 
 #let example(code, scope: (:)) = {
   code = code.text
-  set box(width: 100%, inset: 1em, stroke: code-fill.darken(30%))
-  let codebox = box(raw(code, lang: "typ"), fill: code-fill)
+  let frame = box.with(width: 100%, inset: 1em, stroke: code-fill.darken(30%))
+  let codebox = frame(raw(code, lang: "typ"), fill: code-fill)
   let out = eval(code, mode: "markup", scope: (
     parsely: parsely,
     slot: slot,
@@ -116,86 +40,10 @@ version #typst-toml.package.version
   if util.flatten-sequence(out).all(util.is-space) {
     codebox
   } else {
-    stack(codebox, box(out))
+    stack(codebox, frame(out))
   }
 }
 
-
-
-= At a glance
-
-#set raw(lang: "typc")
-
-+ Import the package with:
-
-  ```typ
-  #import "@preview/{{PACKAGE_NAME}}:{{VERSION}}"
-  ```
-
-+ @grammars[Declare a grammar] by listing the operators you want to parse in a dictionary:
-
-  #let grammar = (
-    eq:  (infix: $=$, prec: 0),
-    add: (infix: $+$, prec: 1, assoc: true),
-    mul: (infix: $$,  prec: 2, assoc: true),
-    group: (match: $(slot("body", many: #true))$),
-    pow: (match: $slot("base")^slot("exp")$),
-  )
-
-  #example(```typ
-  #import parsely: slot
-  #let grammar = (
-    eq:  (infix: $=$, prec: 0),
-    add: (infix: $+$, prec: 1, assoc: true),
-    mul: (infix: $$,  prec: 2, assoc: true),
-    grp: (match:  $(slot("body", many: #true))$),
-    pow: (match:  $slot("base")^slot("exp")$),
-  )
-  ```)
-
-  Operators can have @prec-assoc and use @slots.
-
-+ Call `parsely.parse()` with the content and the grammar dictionary to use.
-
-  #let eqn = $(a + b)^2 = a^2 + 2a b + b^2$
-  #let (tree, rest) = parsely.parse(eqn, grammar)
-
-  #example(```typ
-  #let it = $(a + b)^2 = a^2 + 2a b + b^2$
-  #let (tree, rest) = parsely.parse(it, grammar)
-  ```, scope: (grammar: grammar))
-
-  This returns the syntax tree along with any trailing tokens that failed to parse.
-  
-+ Use `parsely.walk()` and `parsely.render()` to visit nodes and convert them to content.
-
-  #example(```typ
-  #parsely.walk(tree, post: node => parsely.render(node, grammar))
-  ```, scope: (grammar: grammar, tree: tree))
-  #example(```typ
-  #import "@preview/cetz:0.4.2"
-  #cetz.canvas({
-    let t = parsely.walk(tree, post: ((head, args, slots)) => {
-      (pad(strong(head), 3pt), ..args, ..slots.values())
-    }, leaf: rect)
-    cetz.tree.tree(t, grow: 0.2, spread: 0.5)
-  })
-  ```, scope: (tree: tree, grammar: grammar))
-
-
-
-
-
-
-// #util.walk(tree, post: it => {
-//   set list(marker: [--])
-//   let (head, args, slots) = it.values()
-//   box(stroke: (left: 1pt), inset: (left: 5pt))[
-//     #emph(head)
-//     #args.map(i => enum.item[#i]).join()
-//     #slots.pairs().map(((k, v)) => list.item[#k:\ #v]).join()
-//   ]
-// })
 
 #let hash-color(text) = {
   import "@preview/jumble:0.0.1"
@@ -227,74 +75,6 @@ version #typst-toml.package.version
     ..range(args.len()).map(x => grid.vline(x: x + 1, stroke: 0.5pt + c))
   ))
 }, leaf: math.equation)
-
-
-= Guide
-
-== Declaring grammars <grammars>
-
-Grammars define how content is transformed into an abstract syntax tree and can be changed to work for different contexts or domain specific languages.
-
-A grammar is a dictionary where each value is an _operator_ and each key is the operator's name.
-
-For example, a the simple grammar below
-#example(```typ
-#let grammar = (
-  add: (infix: $+$, prec: 1, assoc: true),
-  sub: (infix: $-$, prec: 1, assoc: left),
-  mul: (infix: $times$, prec: 2, assoc: true),
-  pow: (match: $slot("base")^slot("exp")$),
-)
-```)
-defines $+$ as an associative operator of lower precedence than $times$
-
-#let grammar = (
-  add: (infix: $+$, prec: 1, assoc: true),
-  sub: (infix: $-$, prec: 1, assoc: left),
-  pos: (prefix: $+$, prec: 1),
-  neg: (prefix: $-$, prec: 1, assoc: left),
-  fact: (postfix: $!$, prec: 3),
-  mul: (infix: $times$, prec: 2, assoc: true),
-  grp: (match: $(slot("body", many: #true))$),
-  pow: (match: $slot("base")^slot("exp")$),
-  call: (match: $slot("fn")(slot("args"))$),
-  frac: math.frac,
-)
-#let (tree, rest) = parse($A times f - B^n times sqrt(d)$, grammar)
-#waterfall(tree)
-// #render.lisp(tree)
-
-An output parse tree consists of nodes whose heads are the name of one of these operators.
-
-// #render.regions(tree, grammar)
-
-
-== Prefix, infix, postfix and match operators <op-kinds>
-
-An operator is specified as a dictionary whose first key is its _operator type_ and first value is a _pattern_, such as
-`(infix: $+$, ..)`.
-Possible operator types are _prefix_, _infix_, _postfix_ and _expr_.
-The pattern can be:
-- a single literal such as `$+$` or `$in$`
-- a sequence of tokens such as `$::$`, `$=^"def"$` or `$dif/(dif x)$`
-- a @slots[slot pattern] such as `$sum_slot("var")$` or `$[slot("l"), slot("r")]$`
-
-Prefix, infix and postfix operators consume tokens around them, subject to their precedence, given by a `prec` entry in the operator dictionary.
-
-#[
-#show table.cell.where(x: 0): emph
-#let na = text(gray)[not applicable]
-#table(
-  inset: (left: 0pt, rest: 8pt),
-  stroke: (x: none),
-  columns: (auto, ..(1fr,)*4),
-  [Operator type], [Prefix], [Infix], [Postfix], [Match],
-  [Captures positional\ arguments], [one after], [to either side], [one before], text(gray)[neither side],
-  [Precedence], [required], [required], [required], text(gray)[not applicable],
-  [Associativity], na, [left/right/both], na, na,
-  [Captures slot\ arguments], ..([yes],)*4,
-)
-]
 
 
 #let examples(grammar-block, ..args) = {
@@ -332,26 +112,300 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
 }
 
 
-- a *kind*, either 
-- a *pattern*
+#let cover-graphic = {
+
+  let hash-color(text) = {
+    import "@preview/jumble:0.0.1"
+    let h = array(jumble.md4(text)).sum()*5deg
+    let s = calc.rem(array(jumble.md4(text.rev())).sum(), 100)*1%
+    color.hsv(h, 80%, 70%)
+  }
+
+  let regions(tree, grammar) = context util.walk(tree, post: it => {
+    let c = hash-color(it.head)
+    show: rect.with(
+      stroke: 2pt + c,
+      fill: c.transparentize(95%),
+      inset: 4pt,
+    )
+    $ #render(it, grammar) $
+  })
+
+  let grammar = (
+    eq: (infix: $=$, prec: 0),
+    sum: (prefix: $sum_(slot("var") = slot("start"))^slot("stop")$, prec: 2),
+    frac: (match: $slot("num")/slot("denom")$),
+    fact: (postfix: $!$, prec: 3),
+    mul: (infix: $$, prec: 2),
+    pow: (match: $slot("base")^slot("exp")$),
+    call: (match: $slot("fn") tight (slot("args"))$),
+  )
+
+  let eq = $exp(x) = sum_(k = 0)^oo 1/k! x^k$
+  let (tree, rest) = parse(eq, grammar)
+  
+  let sep = text(20pt, $ arrow.t.b $)
+  stack(
+    spacing: 10pt,
+    box(text(15pt, regions(tree, grammar))),
+    sep,
+    util.walk(tree, post: it => {
+      set text(14pt)
+      let c = hash-color(it.head)
+      text(c, strong[#it.head])
+      text(c)[(]
+      {
+        if it.head == "sum" {
+          (it.slots.var, it.slots.start, it.slots.stop) // custom order
+        } else {
+          it.at("slots", default: (:)).values()
+        }
+        it.at("args", default: ())
+      }.join(text(c)[, ])
+      text(c)[)]
+    }, leaf: it => $it$),
+    sep,
+    move(dx: 0.5em, text(12pt, cetz.canvas({
+      let a = util.walk(tree, post: it => {
+        let c = hash-color(it.head)
+        (text(c, strong(it.head)), ..it.args, ..it.slots.values())
+      }, leaf: it => $it$)
+      cetz.draw.set-style(content: (padding: .1))
+      cetz.tree.tree(a, grow: 0.5, spread: 0)
+    }))),
+  )
+}
+
+#[
+  #set text(15pt)
+  #box(title[#typst-toml.package.name])
+  #text(0.8em)[version #typst-toml.package.version]
+
+  Parse equations with Typst
+]
+
+
+
+#v(1fr)
+
+#align(center, cover-graphic)
+
+#v(1fr)
+
+#context outline(target: selector(heading).after(here()))
+
+
+#pagebreak()
+
+
+= At a glance
+
+#set raw(lang: "typc")
+
++ Import the package with:
+
+  ```typ
+  #import "@preview/{{PACKAGE_NAME}}:{{VERSION}}"
+  ```
+
++ @grammars[Declare a grammar] by listing the @op-kinds[operators] you want to parse in a dictionary:
+
+  #let grammar = (
+    eq:  (infix: $=$, prec: 0),
+    add: (infix: $+$, prec: 1, assoc: true),
+    mul: (infix: $$,  prec: 2, assoc: true),
+    group: (match: $(slot("body", many: #true))$),
+    pow: (match: $slot("base")^slot("exp")$),
+  )
+
+  #example(```typ
+  #import parsely: slot
+  #let grammar = (
+    eq:  (infix: $=$, prec: 0),
+    add: (infix: $+$, prec: 1, assoc: true),
+    mul: (infix: $$,  prec: 2, assoc: true),
+    grp: (match:  $(slot("body", many: #true))$),
+    pow: (match:  $slot("base")^slot("exp")$),
+  )
+  ```)
+
+  Operators can have @prec-assoc and use @slots.
+
++ Call `parsely.parse()` on the content with the grammar to use.
+
+  #let eqn = $(a + b)^2 = a^2 + 2a b + b^2$
+  #let (tree, rest) = parsely.parse(eqn, grammar)
+
+  #example(```typ
+  #let it = $(a + b)^2 = a^2 + 2a b + b^2$
+  #let (tree, rest) = parsely.parse(it, grammar)
+  ```, scope: (grammar: grammar))
+
+  This returns the parsed syntax tree along with any trailing tokens that failed to parse.
+  
++ Use `parsely.walk()` or `parsely.render()` to visit nodes and turn them into content.
+
+  #example(```typ
+  #parsely.walk(tree, post: node => parsely.render(node, grammar))
+  ```, scope: (grammar: grammar, tree: tree))
+
+  #example(```typ
+  #import "@preview/cetz:0.4.2"
+  #cetz.canvas({
+    let cetz-tree = parsely.walk(tree,
+      post: it => (strong(it.head), ..it.args, ..it.slots.values()),
+      leaf: it => $it$
+    )
+    cetz.draw.set-style(content: (padding: 3pt))
+    cetz.tree.tree(cetz-tree, grow: 0.2, spread: 0.5)
+  })
+  ```, scope: (tree: tree, grammar: grammar))
+
+
+
+
+
+
+
+= Guide
+
+== Declaring grammars <grammars>
+
+Grammars define how content is transformed into an abstract syntax tree.
+
+
+A grammar is given as a dictionary where each value is an *operator* and each key is the operator's name, which is used as the name for the corresponding nodes in a syntax tree.
+
+For example, the simple grammar below defines:
+- the token "$+$" as an associative binary operator of lower precedence than "$times$" so that $a + b times c$ is parsed as $a + (b times c)$
+- the token "$-$" as left associative so $a - b - c$ is parsed as $(a - b) - c$
+- the @slots[slot pattern] "$#(`base`)^#(`exp`)$" matching expressions like $2^5$, $(a + b)^2$ or $e^(-i (k x + omega t))$
+#example(```typ
+#let grammar = (
+  add: (infix: $+$, prec: 1, assoc: true),
+  sub: (infix: $-$, prec: 1, assoc: left),
+  neg: (prefix: $-$, prec: 1),
+  mul: (infix: $times$, prec: 2, assoc: true),
+  pow: (match: $slot("base")^slot("exp")$),
+)
+```)
+
+The order of operators in a grammar matters.
+The first operator whose pattern matches content will be used to parse that content.
+This means operators should generally be listed with the more specific patterns earlier, with "catch all" patterns later. An important case of this is when @juxt.
+Operator precedence is not related to the order that operators are listed in the grammar.
+
+
+
+== Prefix, infix, postfix and match operators <op-kinds>
+
+An operator is specified as a dictionary whose first key is the *operator type* and first value is the *operator pattern*.
+For example, `(infix: $+$, ..)` is an operator of type _infix_ with pattern `$+$`.
+There are four kinds of operators: `prefix`, `infix`, `postfix` and `expr`.
+
+#[
+#show table.cell.where(x: 0): smallcaps
+#let na = text(gray)[not applicable]
+#figure(table(
+  inset: (left: 0pt, rest: 8pt),
+  align: left,
+  stroke: (none),
+  columns: (auto, ..(1fr,)*4),
+
+  [Operator type], [Prefix], [Infix], [Postfix], [Match],
+  table.hline(),
+  [Positional arguments], [one after], [to either side], [one before], text(gray)[none],
+  [Slot arguments], ..([yes],)*4,
+  [Precedence, `prec`], [required], [required], [required], text(gray)[not applicable],
+  [Associativity, `assoc`], na, [left/right/both], na, na,
+), caption: [
+  Kinds of operators available when declaring grammars and their features.
+]) <op-table>
+]
+
+
+Prefix, infix and postfix operators consume tokens around them as *positional arguments*, subject to @prec-assoc[precedence].
+Match operators do not consume tokens to the left or right, but simply match a pattern.
+All operators support @slots, consuming tokens as *slot arguments*.
+
+
+
+== Parsing and syntax trees
+
+Parsing content with respect to a grammar is the process of transforming the content into a *syntax tree*.
+The tree returned by `parsely.parse()` is composed of nodes with two kinds of children: _positional_ arguments and named or _slot_ arguments.
+Nodes are of the form
+```
+(head: str, args: array, slots: dictionary)
+```
+where "`head`" is the associated operator name.
+The positional arguments in "`args`" hold the left and right sides of unary or binary operators, while "`slot`" arguments hold the matched values of slots in patterns.
+
+For example, using the simple grammar defined above:
+
+#example(```typ
+#let (tree, rest) = parsely.parse($a + b^2$, grammar)
+#tree // this node is from an infix operator with positional arguments
+```, scope: (grammar: grammar))
+
+*Not all content has to be parsed.*
+When `parsely.parse()` is called on some content, it tries to match the content with operators defined in the grammar.
+If successful, the parser recursively descends into arguments and tries to parse those.
+If parsing slot arguments fails, the slot is simply left as content in the returned syntax tree.
+If parsing positional arguments fails, the what was parsed is returned in `tree` and what remained is retuned as content in `rest`.
+
+=== Tree traversal
+
+#example(```typ
+#parsely.walk(tree, post: node => {
+  let (head, args, slots) = node
+  if slots.len() > 0 {
+    (head, ..args, slots)
+  } else {
+    (head, ..args)
+  }
+})
+```, scope: (tree: parsely.parse($a + b^2$, grammar).first()))
+
+
+== Pattern matching <slots>
+
+Operator patterns are matched against sequences of tokens in order to parse content.
+Patterns can be:
+
+- *single tokens*, such as `$+$` or `$in$`
+
+- *sequences of tokens*, such as `$::$`, `$=^"def"$` or `$dif/(dif x)$`
+
+- *slot patterns*, such as `$sum_slot("var")$` or `$[slot("left*"), slot("right*")]$`
+
+- *element functions* as a shorthand for slot patterns matching that element and capturing its fields, such as `math.frac` short for `$frac(slot("num"), slot("denom"))$`
+
+Pattern matching is done by the function `parsely.match(pattern, expr)`, which returns a dictionary if the match is successful and `false` otherwise.
+#example(```typ
+#import parsely: slot
+#parsely.match($1 + slot("rhs")$, $1 + x^2$) \
+#parsely.match($A B C$, $A B Omega$)
+```)
+
+Slots are wildcard tokens that match any content.
+A slot such as `slot("rhs")` will match a single token, but *multiple tokens* can be matched with `slot("rhs", many: true)` or `slot("rhs*")` for short.
+
+#example(```typ
+#parsely.match($1; 2; slot("etc")$,  $1; 2; 3; 4; 5$) \
+#parsely.match($1; 2; slot("etc*")$, $1; 2; 3; 4; 5$)
+```)
+
+By default, many-token slots are *greedy*, prefering to match more tokens when there is choice.
+Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?")` match as few tokens as possible.
+
+#example(```typ
+#parsely.match($slot("greedy*"), slot("x")$, $alpha, beta, gamma$) \
+#parsely.match($slot("lazy*?"),  slot("x")$, $alpha, beta, gamma$)
+```)
 
 
 == Precedence and associativity <prec-assoc>
-
-#examples(```typc
-  add:   (infix: $+$,   prec: 1, assoc: true),
-  dot:   (infix: $dot$, prec: 2),
-  fact:  (postfix: $!$, prec: 3),
-  query: (postfix: $?$, prec: 0),
-  mul:   (infix: $$,    prec: 2, assoc: true),
-  ```,
-  $x + bold(u) dot bold(v) + p q r$,
-  $4pi r^2 + z!$,
-  $X  k! Z?$,
-)
-
-
-== Pattern matching with slots <slots>
 
 #examples(```typc
   add: (infix: $+$, prec: 1, assoc: true),
@@ -365,6 +419,20 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
   $[h]_star (rho^n + R)$,
   $[A B, C + D]$,
 )
+
+
+#examples(```typc
+  add:   (infix: $+$,   prec: 1, assoc: true),
+  dot:   (infix: $dot$, prec: 2),
+  fact:  (postfix: $!$, prec: 3),
+  query: (postfix: $?$, prec: 0),
+  mul:   (infix: $$,    prec: 2, assoc: true),
+  ```,
+  $x + bold(u) dot bold(v) + p q r$,
+  $4pi r^2 + z!$,
+  $X  k! Z?$,
+)
+
 
 
 == Matching whitespace tightly or loosely
@@ -383,7 +451,7 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
   `$P Q !$`,
 )
 
-== Parsing juxtaposition as an operator
+== Parsing juxtaposition as an operator <juxt>
 
 
 
@@ -446,3 +514,59 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
 == Annotating matrix dimensions
 
 == Rewriting cubing algorithms
+
+#let grammar = (
+  eq: (infix: $=$, prec: 0),
+  conjugate: (infix: $*$, prec: 2, assoc: right),
+  prod: (infix: $$, prec: 1, assoc: true),
+  commutator: (match: $[slot("left*"), slot("right*")]$),
+  inverse: (match: $slot("body")'$),
+  group: (match: $(slot("body*"))$),
+)
+#let alg = $A * [R, U] F'$
+
+#let (tree, rest) = parse(alg, grammar)
+#parsely.render-spans(tree, grammar)
+
+#let parse-algo(it) = {
+  let (tree, rest) = parse(alg, grammar)
+  parsely.walk(tree, post: ((head, args, slots)) => (head, ..args, ..slots.values()))
+}
+
+#let expand(algo) = util.walk-array(algo, post: ((head, ..args)) => {
+  if head == "conjugate" {
+    let (x, y) = args
+    ("prod", x, y, ("inverse", x))
+  } else if head == "commutator" {
+    let (x, y) = args
+    ("prod", x, y, ("inverse", x), ("inverse", y))
+  } else {
+    (head, ..args)
+  }
+})
+#let flatten(algo) = util.walk-array(algo, post: ((head, ..args)) => {
+  if head == "prod" {
+    let flattened = ()
+    for arg in args {
+      if type(arg) == array and arg.len() > 1 and arg.first() == "prod" {
+        flattened += arg.slice(1)
+      } else {
+        flattened.push(arg)
+      }
+    }
+    ("prod", ..flattened)
+  } else {
+    (head, ..args)
+  }
+})
+#parse-algo(tree)
+
+#let sim = flatten(expand(parse-algo(tree)))
+#util.walk-array(sim, post: ((head, ..args)) => {
+  let slots = (:)
+  if head == "inverse" {
+    slots.body = args.pop()
+  }
+  let node = (head: head, args: args, slots: slots)
+  parsely.render(node, grammar)
+})
