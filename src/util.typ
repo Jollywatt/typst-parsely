@@ -46,8 +46,10 @@
 
   let pos = ()
   if "positional" in arg-types {
-    for field in arg-types.at("positional", default: ()) {
-      pos.push(fields.remove(field))
+    for field in fields.keys() {
+      if field in arg-types.positional {
+        pos.push(fields.remove(field))
+      }
     }
   }
   if "variadic" in arg-types {
@@ -62,11 +64,10 @@
   let w(it) = walk-content(it, pre: pre, post: post)
   let fields = pre(it).fields().pairs().map(((k, v)) => {
     if type(v) == array { (k, v.map(w)) }
-    else if type(it) == content { (k, w(v)) }
-    else { (k, v) }
+    else { (k, w(v)) }
   }).to-dict()
   let fn = it.func()
-  let args = content-fields-to-arguments(fn, it.fields())
+  let args = content-fields-to-arguments(fn, fields)
   post(fn(..args))
 }
 
