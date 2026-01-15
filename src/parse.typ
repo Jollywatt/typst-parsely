@@ -57,7 +57,7 @@
       let (slots, tokens) = m
       let op = (
         kind: kind,
-        ..if kind != "expr" { (prec: spec.at("prec", default: 0)) },
+        ..if kind != "match" { (prec: spec.at("prec", default: 0)) },
         ..if kind == "infix" { (assoc: spec.at("assoc", default: alignment.left)) },
         slots: slots,
       )
@@ -102,7 +102,7 @@
           }
           op = (
             name: "content",
-            kind: "expr",
+            kind: "match",
             args: (it.func(), ..pos),
             slots: named,
           )
@@ -147,7 +147,7 @@
     // parsing doesn't recurse into content args??
     left = (head: "content", args: op.args, slots: op.slots)
 
-  } else if op.kind == "expr" {
+  } else if op.kind == "match" {
     left = (head: op.name, args: (), slots: op.slots)
   
   // prefix
@@ -216,7 +216,7 @@
         continue
       }
 
-    } else if op.kind == "expr" {
+    } else if op.kind == "match" {
       // encountered two consecutive tokens
       // which are not joined by any operator
       // leave unparsed

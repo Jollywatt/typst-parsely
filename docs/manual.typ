@@ -43,11 +43,11 @@
   let grammar = (
     eq: (infix: $=$, prec: 0),
     sum: (prefix: $sum_(slot("var") = slot("start"))^slot("stop")$, prec: 2),
-    frac: (expr: $slot("num")/slot("denom")$),
+    frac: (match: $slot("num")/slot("denom")$),
     fact: (postfix: $!$, prec: 3),
     mul: (infix: $$, prec: 2),
-    pow: (expr: $slot("base")^slot("exp")$),
-    call: (expr: $slot("fn") tight (slot("args"))$),
+    pow: (match: $slot("base")^slot("exp")$),
+    call: (match: $slot("fn") tight (slot("args"))$),
   )
 
   let eq = $exp(x) = sum_(k = 0)^oo 1/k! x^k$
@@ -138,8 +138,8 @@ version #typst-toml.package.version
     eq:  (infix: $=$, prec: 0),
     add: (infix: $+$, prec: 1, assoc: true),
     mul: (infix: $$,  prec: 2, assoc: true),
-    group: (expr: $(slot("body", many: #true))$),
-    pow: (expr: $slot("base")^slot("exp")$),
+    group: (match: $(slot("body", many: #true))$),
+    pow: (match: $slot("base")^slot("exp")$),
   )
 
   #example(```typ
@@ -148,8 +148,8 @@ version #typst-toml.package.version
     eq:  (infix: $=$, prec: 0),
     add: (infix: $+$, prec: 1, assoc: true),
     mul: (infix: $$,  prec: 2, assoc: true),
-    grp: (expr:  $(slot("body", many: #true))$),
-    pow: (expr:  $slot("base")^slot("exp")$),
+    grp: (match:  $(slot("body", many: #true))$),
+    pow: (match:  $slot("base")^slot("exp")$),
   )
   ```)
 
@@ -243,7 +243,7 @@ For example, a the simple grammar below
   add: (infix: $+$, prec: 1, assoc: true),
   sub: (infix: $-$, prec: 1, assoc: left),
   mul: (infix: $times$, prec: 2, assoc: true),
-  pow: (expr: $slot("base")^slot("exp")$),
+  pow: (match: $slot("base")^slot("exp")$),
 )
 ```)
 defines $+$ as an associative operator of lower precedence than $times$
@@ -255,9 +255,9 @@ defines $+$ as an associative operator of lower precedence than $times$
   neg: (prefix: $-$, prec: 1, assoc: left),
   fact: (postfix: $!$, prec: 3),
   mul: (infix: $times$, prec: 2, assoc: true),
-  grp: (expr: $(slot("body", many: #true))$),
-  pow: (expr: $slot("base")^slot("exp")$),
-  call: (expr: $slot("fn")(slot("args"))$),
+  grp: (match: $(slot("body", many: #true))$),
+  pow: (match: $slot("base")^slot("exp")$),
+  call: (match: $slot("fn")(slot("args"))$),
   frac: math.frac,
 )
 #let (tree, rest) = parse($A times f - B^n times sqrt(d)$, grammar)
@@ -269,7 +269,7 @@ An output parse tree consists of nodes whose heads are the name of one of these 
 // #render.regions(tree, grammar)
 
 
-== Prefix, infix, postfix and expression operators <op-kinds>
+== Prefix, infix, postfix and match operators <op-kinds>
 
 An operator is specified as a dictionary whose first key is its _operator type_ and first value is a _pattern_, such as
 `(infix: $+$, ..)`.
@@ -288,10 +288,10 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
   inset: (left: 0pt, rest: 8pt),
   stroke: (x: none),
   columns: (auto, ..(1fr,)*4),
-  [Operator type], [Prefix], [Infix], [Postfix], [Expression],
+  [Operator type], [Prefix], [Infix], [Postfix], [Match],
   [Captures positional\ arguments], [one after], [to either side], [one before], text(gray)[neither side],
-  [Has precedence], [required], [required], [required], text(gray)[not applicable],
-  [Has associativity], na, [left/right/both], na, na,
+  [Precedence], [required], [required], [required], text(gray)[not applicable],
+  [Associativity], na, [left/right/both], na, na,
   [Captures slot\ arguments], ..([yes],)*4,
 )
 ]
@@ -357,9 +357,9 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
   add: (infix: $+$, prec: 1, assoc: true),
   sum: (prefix: $sum_slot("var")$, prec: 2),
   mul: (infix: $$, prec: 2, assoc: true),
-  grp: (expr: $(slot("body*"))$),
-  pow: (expr: $slot("base")^slot("exp")$),
-  com: (expr: $[slot("left*"), slot("right*")]$)
+  grp: (match: $(slot("body*"))$),
+  pow: (match: $slot("base")^slot("exp")$),
+  com: (match: $[slot("left*"), slot("right*")]$)
   ```,
   $C_(i j) + sum_k A_(i k) B_(k j) + II$,
   $[h]_star (rho^n + R)$,
@@ -373,9 +373,9 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
   fact: (postfix: $tight !$, prec: 3),
   assert: (postfix: $loose !$, prec: 0),
   mul: (infix: $$, prec: 2, assoc: true),
-  grp: (expr: $(slot("body*"))$),
-  call: (expr: $slot("fn") tight (slot("body*"))$),
-  pow: (expr: $slot("base")^slot("exp")$),
+  grp: (match: $(slot("body*"))$),
+  call: (match: $slot("fn") tight (slot("body*"))$),
+  pow: (match: $slot("base")^slot("exp")$),
   ```,
   `$lambda f(x^2)$`,
   `$lambda f (x^2)$`,
@@ -398,9 +398,9 @@ Prefix, infix and postfix operators consume tokens around them, subject to their
   sub: (infix: $-$, prec: 1),
   dot: (infix: $dot$, prec: 2),
   fact: (postfix: $!$, prec: 4),
-  pow: (expr: $slot("base")^slot("exp")$),
+  pow: (match: $slot("base")^slot("exp")$),
   mul: (infix: $$, prec: 3),
-  group: (expr: $(slots("body"))$, prec: 0),
+  group: (match: $(slot("body*"))$, prec: 0),
 )
 
 

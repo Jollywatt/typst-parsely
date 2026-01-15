@@ -45,7 +45,7 @@
   neg: (prefix: $-$, prec: 2),
   fact: (postfix: $!$, prec: 3),
   question: (postfix: $?$, prec: 0),
-  parens: (expr: $(slot("body*"))$),
+  parens: (match: $(slot("body*"))$),
 )
 
 #assert-expr(grammar,
@@ -68,7 +68,7 @@
 #let grammar = (
   binary-sum: (infix: $+$, prec: 1),
   unary-sum: (prefix: $+$, prec: 3),
-  group: (expr: $(slot("body*"))$)
+  group: (match: $(slot("body*"))$)
 )
 #assert-expr(grammar,
   $a + b$,
@@ -87,7 +87,7 @@
   dot: (infix: $dot$, prec: 2),
   fact: (postfix: $!$, prec: 4),
   mul: (infix: $$, prec: 3),
-  group: (expr: $(slot("body*"))$),
+  group: (match: $(slot("body*"))$),
 )
 
 #assert-expr(grammar,
@@ -120,7 +120,7 @@
   mul: (infix: $times$, prec: 2, assoc: true),
   div: (infix: $slash$, prec: 2, assoc: left),
   arr: (infix: $->$, prec: 0, assoc: right),
-  group: (expr: $(slot("group*"))$),
+  group: (match: $(slot("group*"))$),
 )
 
 #assert-expr(grammar,

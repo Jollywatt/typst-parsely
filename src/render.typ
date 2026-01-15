@@ -24,7 +24,7 @@
     $args.first() op$
   } else if kind == "prefix" {
     $op args.first()$
-  } else if kind == "expr" {
+  } else if kind == "match" {
     op
   } else {
     panic(op)
