@@ -26,23 +26,18 @@
     // test whether tokens possibly begin with given operator
     let match-op(spec, tokens) = {
       if type(spec) == function {
-        let m = match-sequence((spec,), tokens, match: match)
+        let fn = spec
+        let m = match-sequence((fn,), tokens, match: match)
         if m == false { return false }
         let (slots, tokens) = m
 
-        let arg-types = content-positional-args.at(repr(spec), default: (positional: ()))
-        let pos = ()
-        for name in arg-types.at("positional", default: ()) {
-          pos.push(slots.remove(name))
-        }
-        if "variadic" in arg-types {
-          pos += slots.remove(arg-types.variadic)
-        }
+        let args = util.content-fields-to-arguments(fn, slots)
+
         let op = (
           kind: function,
           fn: spec,
-          args: pos,
-          slots: slots,
+          args: args.pos(),
+          slots: args.named(),
         )
         return (op, tokens)
       }

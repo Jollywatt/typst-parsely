@@ -40,26 +40,22 @@
 }
 
 #let content-positional-args = json("content-positional-args.json")
-#let construct-content(fn, fields) = {
-  if repr(fn) == "sequence" {
-    fields.children.join()
-  } else if repr(fn) in content-positional-args {
-    let pos = ()
-    let arg-types = content-positional-args.at(repr(fn))
-    for k in arg-types.at("positional", default: ()) {
-      pos.push(fields.remove(k))
-    }
-    if "variadic" in arg-types {
-      pos += fields.at(arg-types.variadic)
-    }
-    fn(..pos, ..fields)
-  } else {
-    panic()
-    let fname = repr(fn)
-    fn(..fields)
-  }
-}
 
+#let content-fields-to-arguments(fn, fields) = {
+  let arg-types = content-positional-args.at(repr(fn))
+
+  let pos = ()
+  if "positional" in arg-types {
+    for field in arg-types.at("positional", default: ()) {
+      pos.push(fields.remove(field))
+    }
+  }
+  if "variadic" in arg-types {
+    pos += fields.remove(arg-types.variadic)
+  }
+  
+  arguments(..pos, ..fields)
+}
 
 #let walk-content(it, pre: it => it, post: it => it) = {
   if type(it) != content { return it }
@@ -69,7 +65,9 @@
     else if type(it) == content { (k, w(v)) }
     else { (k, v) }
   }).to-dict()
-  post(construct-content(it.func(), fields))
+  let fn = it.func()
+  let args = content-fields-to-arguments(fn, it.fields())
+  post(fn(..args))
 }
 
 
