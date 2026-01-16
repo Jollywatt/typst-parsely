@@ -154,7 +154,9 @@
 }
 
 #let match(pattern, expr, ctx: (:)) = {
-  
+  pattern = unwrap(pattern)
+  expr = unwrap(expr)
+
   if is-slot(pattern) {
     let name = slot-name(pattern)
 
@@ -179,9 +181,6 @@
   // pattern is normal content
   } else if type(pattern) == content {
     if type(expr) != content { return false }
-
-    pattern = unwrap(pattern)
-    expr = unwrap(expr)
 
     if pattern.func() != expr.func() { return false }
 

@@ -10,6 +10,7 @@
 #assert-match("A", "A", (:))
 #assert-match("A", "B", false)
 #assert-match(slot("x"), "A", (x: "A"))
+#assert-match($slot("x")$, $A$, (x: $A$))
 #assert-match($A$, $A$, (:))
 #assert-match($A B$, $A B$, (:))
 #assert-match(
