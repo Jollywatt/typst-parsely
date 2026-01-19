@@ -13,6 +13,9 @@
 #show raw: set text(1.1em, font: "Fira Code", weight: 500)
 #show link: it => underline(it)
 
+#show figure: set align(left)
+#show figure.caption: set text(0.8em)
+
 #show ref: r => {
   if r.element != none and r.element.func() == heading {
     let label = r.supplement
@@ -104,7 +107,7 @@
           let e = eqn
           if e.func() == raw { e = eval(e.text) }
           let (tree, rest) = parse(e, grammar)
-          (eqn, waterfall(tree) + text(red, $space rest.join()$))
+          (eqn, waterfall(tree) + text(red, $space rest$))
         }).flatten()
       )
     },
@@ -224,8 +227,8 @@
     eq:  (infix: $=$, prec: 0),
     add: (infix: $+$, prec: 1, assoc: true),
     mul: (infix: $$,  prec: 2, assoc: true),
-    grp: (match:  $(slot("body", many: #true))$),
-    pow: (match:  $slot("base")^slot("exp")$),
+    grp: (match: $(slot("body", many: #true))$),
+    pow: (match: $slot("base")^slot("exp")$),
   )
   ```)
 
@@ -252,9 +255,9 @@
   #example(```typ
   #import "@preview/cetz:0.4.2"
   #cetz.canvas({
-    let cetz-tree = parsely.walk(tree,
+    let cetz-tree = parsely.walk(tree, // convert tree into cetz format
       post: it => (strong(it.head), ..it.args, ..it.slots.values()),
-      leaf: it => $it$
+      leaf: it => $(it)$
     )
     cetz.draw.set-style(content: (padding: 3pt))
     cetz.tree.tree(cetz-tree, grow: 0.2, spread: 0.5)
@@ -280,7 +283,8 @@ For example, the simple grammar below defines:
 - the token "$+$" as an associative binary operator of lower precedence than "$times$" so that $a + b times c$ is parsed as $a + (b times c)$
 - the token "$-$" as left associative so $a - b - c$ is parsed as $(a - b) - c$
 - the @slots[slot pattern] "$#(`base`)^#(`exp`)$" matching expressions like $2^5$, $(a + b)^2$ or $e^(-i (k x + omega t))$
-#example(```typ
+
+#figure(example(```typ
 #let grammar = (
   add: (infix: $+$, prec: 1, assoc: true),
   sub: (infix: $-$, prec: 1, assoc: left),
@@ -288,7 +292,7 @@ For example, the simple grammar below defines:
   mul: (infix: $times$, prec: 2, assoc: true),
   pow: (match: $slot("base")^slot("exp")$),
 )
-```)
+```), caption: [Simple example grammar]) <example-grammar>
 
 The order of operators in a grammar matters.
 The first operator whose pattern matches content will be used to parse that content.
@@ -333,7 +337,7 @@ All operators support @slots, consuming tokens as *slot arguments*.
 == Parsing and syntax trees
 
 Parsing content with respect to a grammar is the process of transforming the content into a *syntax tree*.
-The tree returned by `parsely.parse()` is composed of nodes with two kinds of children: _positional_ arguments and named or _slot_ arguments.
+The tree returned by `parsely.parse()` is composed of nodes with two kinds of children: *positional* arguments and *slot* arguments.
 Nodes are of the form
 ```
 (head: str, args: array, slots: dictionary)
@@ -341,31 +345,31 @@ Nodes are of the form
 where "`head`" is the associated operator name.
 The positional arguments in "`args`" hold the left and right sides of unary or binary operators, while "`slot`" arguments hold the matched values of slots in patterns.
 
-For example, using the simple grammar defined above:
+For example, using the simple grammar defined in @example-grammar:
 
-#example(```typ
-#let (tree, rest) = parsely.parse($a + b^2$, grammar)
-#tree // this node is from an infix operator with positional arguments
-```, scope: (grammar: grammar))
-
+#figure(example(```typ
+#parsely.parse($a + b^2$, grammar).tree
+```, scope: (grammar: grammar)), caption: [A parsed syntax tree with two operator nodes defined in @example-grammar and three leaf nodes.]) <example-tree>
 *Not all content has to be parsed.*
 When `parsely.parse()` is called on some content, it tries to match the content with operators defined in the grammar.
 If successful, the parser recursively descends into arguments and tries to parse those.
-If parsing slot arguments fails, the slot is simply left as content in the returned syntax tree.
-If parsing positional arguments fails, the what was parsed is returned in `tree` and what remained is retuned as content in `rest`.
+If parsing slot arguments fails, the slot is simply left as content in the resulting syntax tree.
+If parsing a positional argument fails, what was parsed so far is returned in `tree` and remaining content is returned in `rest`.
 
 === Tree traversal
 
+You can do many things to the resulting syntax tree by performing a post-order tree walk:
 #example(```typ
 #parsely.walk(tree, post: node => {
   let (head, args, slots) = node
-  if slots.len() > 0 {
-    (head, ..args, slots)
-  } else {
-    (head, ..args)
-  }
-})
+  if head == "add" { args.join(" + ") }
+  else if head == "pow" { slots.base + "^" + slots.exp }
+  else { repr(node) } // a fallback string representation
+}, leaf: it => "{" + it + "}")
 ```, scope: (tree: parsely.parse($a + b^2$, grammar).tree))
+In this example, leaf nodes (the symbols $a$, $b$ and $2$) are first transformed into `"{a}"`, `"{b}"`, `"{2}"` and then operator nodes (`add` and `pow`) are converted to strings using specific rules.
+
+Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
 
 == Pattern matching <slots>
@@ -523,7 +527,7 @@ Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?
   inverse: (match: $slot("body")'$),
   group: (match: $(slot("body*"))$),
 )
-#let alg = $A * [R, U] F'$
+#let alg = $A * [R, U] F' (D U)'$
 
 #let (tree, rest) = parse(alg, grammar)
 #parsely.render-spans(tree, grammar)
