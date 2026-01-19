@@ -13,11 +13,10 @@
 // For example, $sum_(#var = #lo)^#hi$ may be parsed as a
 // prefix operator with "slots" (capture groups) for the
 // summation variable and limits.
-
 #let parse(it, grammar, min-prec: -float.inf) = {
 
   let tokens = flatten-sequence(as-array(unwrap(it)))
-  if tokens.len() == 0 { return (none, tokens) }
+  if tokens.len() == 0 { return (tree: none, rest: none) }
 
   // parse tokens as one of the operators defined in the grammar
   // or return false if no match
@@ -80,7 +79,7 @@
     if op == none {
       // drop whitespace
       while true {
-        if tokens.len() == 0 { return (none, ()) }
+        if tokens.len() == 0 { return (none, none) }
         if util.is-space(tokens.first()) {
           tokens = tokens.slice(1)
         } else { break }
@@ -118,7 +117,7 @@
         if type(slot) != content { continue }
         let (tree, rest) = parse(slot, grammar, min-prec: -float.inf)
         // if the whole slot doesn't parse to the end, keep unparsed
-        if rest.len() != 0 { continue }
+        if rest != none { continue }
         op.slots.at(key) = tree
       }
 
@@ -129,7 +128,7 @@
           if type(arg) != content { continue }
           let (tree, rest) = parse(arg, grammar, min-prec: -float.inf)
           // if the whole arg doesn't parse to the end, keep unparsed
-          if rest.len() != 0 { continue }
+          if rest != none { continue }
           op.args.at(i) = tree
         }
       }
@@ -146,7 +145,7 @@
   // consume literal token
   if op == none {
     while true {
-      if tokens.len() == 0 { return (none, ()) }
+      if tokens.len() == 0 { return (tree: none, rest: none) }
       (left, ..tokens) = tokens
       if not util.is-space(left) { break }
     }
@@ -165,15 +164,22 @@
   
   // prefix
   } else if op.kind == "prefix" {
-    let (right, rest) = parse(tokens, grammar, min-prec: op.prec)
+    let (tree: right, rest) = parse(tokens, grammar, min-prec: op.prec)
     left = (head: op.name, args: (right,), slots: op.slots)
-    tokens = rest // consumed op + right
+    tokens = as-array(rest) // consumed op + right
   }
 
 
 
   // infix and postfix
+  let i = 0
   while tokens.len() > 0 {
+    assert(type(tokens) == array)
+    if i > 200 {
+      panic("seems to be infinite", tokens)
+    }
+    i += 1
+
     let (op, subtokens) = parse-op(tokens, ctx: (left: left))
     if op == none { break }
     
@@ -198,7 +204,8 @@
         left = (head: op.name, args: (left,), slots: (:))
         let abort = false
         while true {
-          let (right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
+          let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
+          rest = as-array(rest)
 
           // don't allow rhs of operator to be none
           if right == none { break }
@@ -218,14 +225,14 @@
       } else {
         // binary
         let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
-        let (right, rest) = parse(subtokens, grammar, min-prec: right-prec)
+        let (tree: right, rest) = parse(subtokens, grammar, min-prec: right-prec)
         
         // don't allow rhs of operator to be none
         if right == none { break }
 
         left = (head: op.name, args: (left, right), slots: (:))
 
-        tokens = rest
+        tokens = as-array(rest)
         continue
       }
 
@@ -240,7 +247,5 @@
 
   }
   
-  return (left, tokens)
+  return (tree: left, rest: tokens.join())
 }
-
-

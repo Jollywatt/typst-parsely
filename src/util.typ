@@ -16,8 +16,9 @@
 #let is-sequence = is-content-type.with("sequence")
 
 #let as-array(it) = {
-  if is-sequence(it) { it.children }
-  else if type(it) == array { it }
+  if type(it) == array { it }
+  else if it == none { () }
+  else if is-sequence(it) { it.children }
   else { (it,) }
 }
 #let flatten-sequence(seq) = as-array(seq).map(as-array).flatten()

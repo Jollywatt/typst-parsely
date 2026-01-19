@@ -365,7 +365,7 @@ If parsing positional arguments fails, the what was parsed is returned in `tree`
     (head, ..args)
   }
 })
-```, scope: (tree: parsely.parse($a + b^2$, grammar).first()))
+```, scope: (tree: parsely.parse($a + b^2$, grammar).tree))
 
 
 == Pattern matching <slots>

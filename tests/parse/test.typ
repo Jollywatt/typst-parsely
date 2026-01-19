@@ -7,9 +7,9 @@
   times: (infix: $times$, prec: 2),
 )
 
-#assert.eq(parse($a$, grammar).first(), $a$.body)
+#assert.eq(parse($a$, grammar).tree, $a$.body)
 #assert.eq(
-  parse($1 + 2$, grammar).first(),
+  parse($1 + 2$, grammar).tree,
   (head: "sum", args: ($1$.body, $2$.body), slots: (:)),
 )
 
@@ -181,16 +181,22 @@
   sub: (infix: $-$, assoc: left, prec: 1),
 )
 #assert.eq(
-  parse($a +$, grammar),
-  ($a$.body, ([ ], $+$.body))
+  parse($a+$, grammar),
+  (tree: $a$.body, rest: $+$.body)
+
 )
 #assert.eq(
   parse($a + b + $, grammar),
-  ((head: "add", args:($a$.body, $b$.body), slots: (:)),
-  ([ ], $+$.body))
+  (
+    tree: (head: "add", args:($a$.body, $b$.body), slots: (:)),
+    rest: $#[ ]+$.body,
+  )
+
 )
 #assert.eq(
   parse($a - b - $, grammar),
-  ((head: "sub", args:($a$.body, $b$.body), slots: (:)),
-  ([ ], $-$.body))
+  (
+    tree: (head: "sub", args:($a$.body, $b$.body), slots: (:)),
+    rest: $#[ ]-$.body,
+  )
 )
