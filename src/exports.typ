@@ -8,5 +8,5 @@
 #let render-debug(it, grammar) = {
   let (tree, rest) = parse(it, grammar)
   box(render-spans(tree, grammar))
-  text(red, rest.join())
+  text(red, rest)
 }
