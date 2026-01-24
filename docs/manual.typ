@@ -217,7 +217,7 @@
     eq:  (infix: $=$, prec: 0),
     add: (infix: $+$, prec: 1, assoc: true),
     mul: (infix: $$,  prec: 2, assoc: true),
-    group: (match: $(slot("body", many: #true))$),
+    group: (match: $(slot("body*"))$),
     pow: (match: $slot("base")^slot("exp")$),
   )
 
@@ -227,7 +227,7 @@
     eq:  (infix: $=$, prec: 0),
     add: (infix: $+$, prec: 1, assoc: true),
     mul: (infix: $$,  prec: 2, assoc: true),
-    grp: (match: $(slot("body", many: #true))$),
+    grp: (match: $(slot("body*"))$),
     pow: (match: $slot("base")^slot("exp")$),
   )
   ```)
@@ -277,7 +277,7 @@
 Grammars define how content is transformed into an abstract syntax tree.
 
 
-A grammar is given as a dictionary where each value is an *operator* and each key is the operator's name, which is used as the name for the corresponding nodes in a syntax tree.
+A grammar is given as a dictionary where each value is an *operator* and each key is the operator's name, which becomes the name for corresponding nodes in a syntax tree.
 
 For example, the simple grammar below defines:
 - the token "$+$" as an associative binary operator of lower precedence than "$times$" so that $a + b times c$ is parsed as $a + (b times c)$
@@ -305,7 +305,7 @@ Operator precedence is not related to the order that operators are listed in the
 
 An operator is specified as a dictionary whose first key is the *operator type* and first value is the *operator pattern*.
 For example, `(infix: $+$, ..)` is an operator of type _infix_ with pattern `$+$`.
-There are four kinds of operators: `prefix`, `infix`, `postfix` and `expr`.
+There are four kinds of operators: `prefix`, `infix`, `postfix` and `match`.
 
 #[
 #show table.cell.where(x: 0): smallcaps
@@ -337,18 +337,20 @@ All operators support @slots, consuming tokens as *slot arguments*.
 == Parsing and syntax trees
 
 Parsing content with respect to a grammar is the process of transforming the content into a *syntax tree*.
-The tree returned by `parsely.parse()` is composed of nodes with two kinds of children: *positional* arguments and *slot* arguments.
+The parse function `parsely.parse(expr, grammar)` returns a dictionary containing `tree` and `rest`.
+The tree is composed of nodes with two kinds of children: *positional* arguments and *slot* arguments.
 Nodes are of the form
 ```
 (head: str, args: array, slots: dictionary)
 ```
-where "`head`" is the associated operator name.
+where "`head`" is the operator name that was matched at that point in the expression.
 The positional arguments in "`args`" hold the left and right sides of unary or binary operators, while "`slot`" arguments hold the matched values of slots in patterns.
+Associative operators may have more than two positional arguments.
 
 For example, using the simple grammar defined in @example-grammar:
 
 #figure(example(```typ
-#parsely.parse($a + b^2$, grammar).tree
+#parsely.parse($a + b^2 + c$, grammar).tree
 ```, scope: (grammar: grammar)), caption: [A parsed syntax tree with two operator nodes defined in @example-grammar and three leaf nodes.]) <example-tree>
 *Not all content has to be parsed.*
 When `parsely.parse()` is called on some content, it tries to match the content with operators defined in the grammar.
