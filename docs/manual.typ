@@ -15,6 +15,7 @@
 
 #show figure: set align(left)
 #show figure.caption: set text(0.8em)
+#set par(justify: true)
 
 #show ref: r => {
   if r.element != none and r.element.func() == heading {
@@ -358,6 +359,7 @@ If successful, the parser recursively descends into arguments and tries to parse
 If parsing slot arguments fails, the slot is simply left as content in the resulting syntax tree.
 If parsing a positional argument fails, what was parsed so far is returned in `tree` and remaining content is returned in `rest`.
 
+
 === Tree traversal
 
 You can do many things to the resulting syntax tree by performing a post-order tree walk:
@@ -378,13 +380,9 @@ Similar post-order tree walks can be used to rewrite nodes, reorder arguments, e
 
 Operator patterns are matched against sequences of tokens in order to parse content.
 Patterns can be:
-
 - *single tokens*, such as `$+$` or `$in$`
-
 - *sequences of tokens*, such as `$::$`, `$=^"def"$` or `$dif/(dif x)$`
-
 - *slot patterns*, such as `$sum_slot("var")$` or `$[slot("left*"), slot("right*")]$`
-
 - *element functions* as a shorthand for slot patterns matching that element and capturing its fields, such as `math.frac` short for `$frac(slot("num"), slot("denom"))$`
 
 Pattern matching is done by the function `parsely.match(pattern, expr)`, which returns a dictionary if the match is successful and `false` otherwise.
@@ -402,14 +400,45 @@ A slot such as `slot("rhs")` will match a single token, but *multiple tokens* ca
 #parsely.match($1; 2; slot("etc*")$, $1; 2; 3; 4; 5$)
 ```)
 
+=== Matching sequences greedily or lazily
+
 By default, many-token slots are *greedy*, prefering to match more tokens when there is choice.
 Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?")` match as few tokens as possible.
 
 #example(```typ
-#parsely.match($slot("greedy*"), slot("x")$, $alpha, beta, gamma$) \
-#parsely.match($slot("lazy*?"),  slot("x")$, $alpha, beta, gamma$)
+#parsely.match($slot("greedy*"), slot("rest*")$, $alpha, beta, gamma$) \
+#parsely.match($slot("lazy*?"),  slot("rest*")$, $alpha, beta, gamma$)
 ```)
 
+=== Matching whitespace tightly or loosely
+
+The presence of whitespace in equations is not always visible (for example, `$f(x)$` and `$f (x)$` are rendered identically) and whitespace is usually ignored when pattern matching.
+However, the presense or lack of whitespace between tokens be explicitly matched with the special `parsely.tight` and `parsely.loose` patterns.
+For example, you can write a pattern that matches `$k!$` but not `$k !$` by using `tight`:
+#example(```typ
+#import parsely: tight, loose
+#parsely.match($slot("a") !$, $A!$) \         // matches (insensitive)
+#parsely.match($slot("a") !$, $A !$) \        // matches (insensitive)
+#parsely.match($slot("a") tight !$, $A!$) \   // matches
+#parsely.match($slot("a") loose !$, $A !$) \  // matches
+#parsely.match($slot("a") tight !$, $A !$) \  // no match (too loose)
+#parsely.match($slot("a") loose !$, $A!$) \   // no match (too tight)
+```)
+This can be useful to disambiguate function application `$f(x, y)$` from implicit multiplication, `$x^2 (1 - x)$`, for example.
+
+#examples(```typc
+  fact: (postfix: $tight !$, prec: 3),
+  assert: (postfix: $loose !$, prec: 0),
+  mul: (infix: $$, prec: 2, assoc: true),
+  grp: (match: $(slot("body*"))$),
+  call: (match: $slot("fn") tight (slot("body*"))$),
+  pow: (match: $slot("base")^slot("exp")$),
+  ```,
+  `$lambda f(x^2)$`,
+  `$lambda f (x^2)$`,
+  `$n k!$`,
+  `$P Q !$`,
+)
 
 == Precedence and associativity <prec-assoc>
 
@@ -441,21 +470,7 @@ Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?
 
 
 
-== Matching whitespace tightly or loosely
 
-#examples(```typc
-  fact: (postfix: $tight !$, prec: 3),
-  assert: (postfix: $loose !$, prec: 0),
-  mul: (infix: $$, prec: 2, assoc: true),
-  grp: (match: $(slot("body*"))$),
-  call: (match: $slot("fn") tight (slot("body*"))$),
-  pow: (match: $slot("base")^slot("exp")$),
-  ```,
-  `$lambda f(x^2)$`,
-  `$lambda f (x^2)$`,
-  `$n k!$`,
-  `$P Q !$`,
-)
 
 == Parsing juxtaposition as an operator <juxt>
 
