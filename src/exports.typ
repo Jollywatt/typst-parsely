@@ -2,7 +2,7 @@
 #import "match.typ": match, slot, tight, loose
 #import "render.typ": render, render-spans
 #import "util.typ" as util: walk, node-depths
-
+#import "common.typ"
 
 
 #let render-debug(it, grammar) = {
