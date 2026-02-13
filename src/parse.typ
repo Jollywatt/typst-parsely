@@ -204,7 +204,7 @@
         left = (head: op.name, args: (left,), slots: (:))
         let abort = false
         while true {
-          let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1)
+          let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1e-3)
           rest = as-array(rest)
 
           // don't allow rhs of operator to be none
@@ -224,7 +224,7 @@
         continue
       } else {
         // binary
-        let right-prec = if assoc == alignment.left { op.prec + 1 } else { op.prec }
+        let right-prec = if assoc == alignment.left { op.prec + 1e-3 } else { op.prec }
         let (tree: right, rest) = parse(subtokens, grammar, min-prec: right-prec)
         
         // don't allow rhs of operator to be none
