@@ -1,5 +1,3 @@
-
-
 #let is-space(it) = {
   if type(it) == str { return it.trim() == "" }
   if type(it) == content {
@@ -42,6 +40,12 @@
 
 #let content-positional-args = json("content-positional-args.json")
 
+/// Construct an element given the content function and a dictionary of fields.
+/// 
+/// Some content functions require some fields to be given as positional or variadic arguments.
+/// This function takes care of those, providing a uniform interface for constructing elements.
+/// 
+/// The field dictionary should be in the same order as given when calling `element.fields()`.
 #let content-fields-to-arguments(fn, fields) = {
   let arg-types = content-positional-args.at(repr(fn))
 
