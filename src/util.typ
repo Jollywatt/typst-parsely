@@ -19,7 +19,12 @@
   else if is-sequence(it) { it.children }
   else { (it,) }
 }
-#let flatten-sequence(seq) = as-array(seq).map(as-array).flatten()
+
+#let flatten-sequence(seq) = {
+  if is-sequence(seq) { seq = seq.children }
+  if type(seq) == array { seq.map(flatten-sequence).flatten() }
+  else { seq }
+}
 
 #let is-node(it) = type(it) == dictionary and "head" in it
 
