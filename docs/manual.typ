@@ -41,7 +41,7 @@
     slot: slot,
     ..scope,
   ))
-  if util.flatten-sequence(out).all(util.is-space) {
+  if util.flatten-sequence(util.as-array(out)).all(util.is-space) {
     codebox
   } else {
     stack(codebox, frame(out))
