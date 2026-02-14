@@ -6,6 +6,8 @@
 #show "{{VERSION}}": typst-toml.package.version
 #show "{{PACKAGE_NAME}}": typst-toml.package.name
 
+#let PUBLIC_SOURCE_URL = sys.inputs.at("source-url", default: none)
+
 #set page(margin: (x: 25mm, y: 20mm))
 #set heading(numbering: "1.", supplement: none)
 #show heading: it => v(1em) + text(1.2em, it) + v(1em, weak: true)
@@ -26,7 +28,6 @@
     r
   }
 }
-
 
 
 #let code-fill = oklab(98.17%, -0.005, -0.007)
@@ -181,6 +182,8 @@
   #set text(15pt)
   #box(title[#typst-toml.package.name])
   #text(0.8em)[version #typst-toml.package.version]
+  #h(1fr)
+  #if PUBLIC_SOURCE_URL != none { link(PUBLIC_SOURCE_URL)[Source] }
 
   Parse equations with Typst
 ]

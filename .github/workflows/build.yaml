@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fontist/setup-fontist@v2
+      - run: fontist install "Fira Code"
+      - run: fontist install "Fira Sans"
+      - uses: typst-community/setup-typst@v3
+      - run: >-
+          typst compile docs/manual.typ manual.pdf
+          --root .
+          --font-path ~/.fontist/fonts
+          --input source-url=${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}
+      
+      # Upload as artifact (viewable in Actions tab, not Releases)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manual
+          path: manual.pdf

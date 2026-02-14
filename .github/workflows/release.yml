@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fontist/setup-fontist@v2
+      - run: fontist install "Fira Code"
+      - run: fontist install "Fira Sans"
+      - uses: typst-community/setup-typst@v3
+      - run: >-
+          typst compile docs/manual.typ manual.pdf
+          --root .
+          --font-path ~/.fontist/fonts
+          --input source-url=${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}
+
+      # Tagged release (v1.0.0, etc.)
+      - name: Create versioned release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: manual.pdf
+          generate_release_notes: true
+
+      # Latest release (updated on every push to main)
+      - name: Update latest release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest (main)
+          files: manual.pdf
+          prerelease: true
+          body: |
+            Auto-updated from main branch.
+            Commit: ${{ github.sha }}
