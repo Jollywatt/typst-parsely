@@ -455,14 +455,13 @@ This allows summation notation "$sum_#`var` #`body`$" to be parsed as a prefix o
 #pagebreak()
 == Associativity of infix operators <assoc>
 
-Infix operators additionally have an optional associativity specified by an `assoc` key which applies when the same operator appears in a sequence.
-Possible values are `left`, `right` and `true`, for left/right associativity (meaning the operators group leftward or rightward) and true associativity (meaning the operator merges with itself and collects multiple arguments).
+Infix operators additionally have an associativity specified by an `assoc` key which applies when the same operator appears in a sequence.
+Possible values are `left` (default), `right` and `true`, for left/right associativity and true associativity (meaning the operator merges with itself and collects multiple arguments) respectively.
 
 #grammar-examples(```typc
   left:  (infix: $<==$,  assoc: left),   // always has exactly two args
   right: (infix: $==>$,  assoc: right),  // always has exactly two args
   both:  (infix: $<==>$, assoc: true),   // can have more than two args
-  seq:  (infix: $,$, assoc: true),
   ```,
   (
     $a <== b <== c$,
@@ -486,9 +485,9 @@ Possible values are `left`, `right` and `true`, for left/right associativity (me
 
 == Parsing juxtaposition as an operator <juxt>
 
-It is common to want to parse sequences of juxtaposed tokens.
+It is common to want to parse sequences of consecutive non-operator tokens.
 The default behaviour is to stop parsing when a token is encountered that is not the argument or slot of an operator.
-To parse multiple tokens as one, you can use strings if applicable or wrap tokens in a box.
+To parse multiple tokens as one, you can use strings (if the formatting is acceptable) or wrap the tokens in an invisible box.
 
 #grammar-examples(```typ
 op: (infix: $plus.o$),
@@ -501,16 +500,17 @@ grp: (match: box),
   Different ways to parse multiple juxtaposed tokens. The trailing red symbols show the `rest` argument returned by `parsely.parse()`, containing content that failed to parse.
 ])
 
-Alternatively, juxtaposition can be parsed as an infix operator with an empty pattern (`$$` or `none`).
+Alternatively, juxtaposition can be parsed as an infix operator by using an empty pattern #box[(`$$` or `none`)].
 This is useful for parsing implicit multiplication, in which case the operator is also given a product-level precedence, as in @example-juxt.
 
-Because the empty pattern always matches, #highlight[juxtaposition operators should appear later than other infix operators] in the grammar dictionary, otherwise $a times b$ is parsed as three tokens $(a, times, b)$ juxtaposed); #highlight[and before match operators], otherwise trailing tokens will be encountered (and parsing halted) before the parser realises the tokens can be interpreted as the right-hand argument of the juxtaposition operator.
+Because the empty pattern always matches anything, #highlight[juxtaposition operators should appear later than other infix operators] in the grammar dictionary (otherwise $a times b$ is parsed as three tokens $(a, times, b)$ juxtaposed).
+Additionally, they should occur #highlight[before match operators], otherwise trailing tokens will be encountered (and parsing halted) before the parser realises the tokens can be interpreted as the right-hand argument of the juxtaposition operator.
 
 #grammar-examples(```typ
 add: (infix: $+$, prec: 1),
-mul: (infix: $times$, prec: 2),  // juxt must be after this
+mul: (infix: $times$, prec: 2),  // "juxt" must be after this
 juxt: (infix: none, assoc: true, prec: 2), 
-grp: (match: $(slot("body*"))$), // juxt must be before this
+grp: (match: $(slot("body*"))$), // "juxt" must be before this
 ```, (
   $1 + a b times c$,
   $(1 + a) (b times c)$,
@@ -546,7 +546,7 @@ If parsing a positional argument fails, what was parsed so far is returned in `t
 
 === Tree traversal
 
-You can do many things to the resulting syntax tree by performing a _post-order tree walk_.
+You can do many things with a syntax tree by performing a _post-order tree walk_.
 
 For example, @example-walk implements a post-walk which transforms leaf nodes (the symbols $a$, $b$ and $2$) into `"{a}"`, `"{b}"`, `"{2}"` and then converts operators nodes (`add` and `pow`) into strings custom rules.
 #figure(example(```typ
@@ -561,119 +561,3 @@ caption: [Traversing the syntax tree from @example-tree to output a string.]) <e
 
 Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
-
-= Examples
-
-== Common grammars
-
-#let grammar = (
-  eq: (infix: $=$, prec: 0),
-  ne: (infix: $!=$, prec: 0),
-  add: (infix: $+$, prec: 1, assoc: true),
-  sub: (infix: $-$, prec: 1),
-  dot: (infix: $dot$, prec: 2),
-  fact: (postfix: $!$, prec: 4),
-  pow: (match: $slot("base")^slot("exp")$),
-  mul: (infix: $$, prec: 3),
-  group: (match: $(slot("body*"))$, prec: 0),
-)
-
-
-== Drawing expression trees
-
-
-  // #example(```typ
-  // #parsely.walk(tree, post: node => $[parsely.render(node, grammar)]_node.head$)
-  // ```, scope: (tree: tree, grammar: grammar))
-
-  More examples
-
-  // #example(```typ
-  // #parsely.util.walk(tree, post: node => {
-  //   if node.head == "eq" {
-  //     node.args.first() + " == " + node.args.last()
-  //   } else if node.head == "add" {
-  //     node.args.join(" + ")
-  //   } else if node.head == "mul" {
-  //     node.args.join("*")
-  //   } else if node.head == "pow" {
-  //     node.slots.base + "**" + node.slots.exp
-  //   } else if node.head == "group" {
-  //     "(" + node.slots.body + ")"
-  //   } else {
-  //     panic(node)
-  //   }
-  // })
-  // ```, scope: (tree: tree, grammar: grammar))
-
-
-
-  #cetz.canvas({
-    cetz.draw.set-style(content: (padding: 5pt))
-    cetz.tree.tree(util.walk(tree, post: it => {
-      (it.head, ..it.args, ..it.slots.values())
-    }))
-  })
-
-
-== Evaluating arithmetic from equations
-
-== Annotating matrix dimensions
-
-== Rewriting cubing algorithms
-
-#let grammar = (
-  eq: (infix: $=$, prec: 0),
-  conjugate: (infix: $*$, prec: 2, assoc: right),
-  prod: (infix: $$, prec: 1, assoc: true),
-  commutator: (match: $[slot("left*"), slot("right*")]$),
-  inverse: (match: $slot("body")'$),
-  group: (match: $(slot("body*"))$),
-)
-#let alg = $A * [R, U] F' (D U)'$
-
-#let (tree, rest) = parse(alg, grammar)
-#parsely.render-spans(tree, grammar)
-
-#let parse-algo(it) = {
-  let (tree, rest) = parse(alg, grammar)
-  parsely.walk(tree, post: ((head, args, slots)) => (head, ..args, ..slots.values()))
-}
-
-#let expand(algo) = util.walk-array(algo, post: ((head, ..args)) => {
-  if head == "conjugate" {
-    let (x, y) = args
-    ("prod", x, y, ("inverse", x))
-  } else if head == "commutator" {
-    let (x, y) = args
-    ("prod", x, y, ("inverse", x), ("inverse", y))
-  } else {
-    (head, ..args)
-  }
-})
-#let flatten(algo) = util.walk-array(algo, post: ((head, ..args)) => {
-  if head == "prod" {
-    let flattened = ()
-    for arg in args {
-      if type(arg) == array and arg.len() > 1 and arg.first() == "prod" {
-        flattened += arg.slice(1)
-      } else {
-        flattened.push(arg)
-      }
-    }
-    ("prod", ..flattened)
-  } else {
-    (head, ..args)
-  }
-})
-#parse-algo(tree)
-
-#let sim = flatten(expand(parse-algo(tree)))
-#util.walk-array(sim, post: ((head, ..args)) => {
-  let slots = (:)
-  if head == "inverse" {
-    slots.body = args.pop()
-  }
-  let node = (head: head, args: args, slots: slots)
-  parsely.render(node, grammar)
-})
