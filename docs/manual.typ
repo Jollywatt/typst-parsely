@@ -564,3 +564,20 @@ caption: [Traversing the syntax tree from @example-tree to output a string.]) <e
 
 Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
+
+#let example-file(path) = {
+  show: block.with(
+    inset: 1em,
+    fill: orange.lighten(90%),
+    stroke: (thickness: 1pt, paint: orange.lighten(60%), dash: (10pt, 10pt)),
+  )
+  set heading(outlined: false)
+  set heading(offset: 1)
+  show heading.where(level: 2): set heading(outlined: true)
+  let url = PUBLIC_SOURCE_URL + "docs/" + path
+  emph[Source code: #link(url, raw(path, lang: none))]
+  include path
+}
+
+= Examples
+#example-file("examples/pariman.typ")
