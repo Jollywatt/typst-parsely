@@ -292,7 +292,7 @@ For example, the simple grammar in @example-grammar defines:
 )
 ```), caption: [Simple example grammar]) <example-grammar>
 
-The order that operators are listed in a grammar matters (and is not related to @prec[operator precidence]).
+The order that operators are listed in a grammar matters (and is not related to @prec[operator precedence]).
 The first operator whose pattern matches content will be used to parse that content.
 This means operators should generally be listed with the more specific patterns earlier and "catch all" patterns later.
 An important special case is when @juxt.
@@ -357,7 +357,7 @@ A slot such as `slot("rhs")` will match a single token, but *multiple tokens* ca
 
 === Matching sequences greedily or lazily
 
-By default, multi-token slots are *greedy*, prefering to match more tokens when there is choice.
+By default, multi-token slots are *greedy*, preferring to match more tokens when there is choice.
 Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?")` match as few tokens as possible.
 
 #example(```typ
@@ -369,7 +369,7 @@ Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?
 === Matching whitespace tightly or loosely
 
 The presence of whitespace in equations is not always visible (for example, `$f(x)$` and #box[`$f (x)$`] are rendered identically) and whitespace is usually ignored when pattern matching.
-However, the presense or lack of whitespace between tokens can be explicitly matched with the special `parsely.tight` and `parsely.loose` patterns.
+However, the presence or lack of whitespace between tokens can be explicitly matched with the special `parsely.tight` and `parsely.loose` patterns.
 For example, you can write a pattern that matches `$k!$` but not `$k !$` by using `tight`:
 #example(```typ
 #import parsely: tight, loose
@@ -403,9 +403,9 @@ This can be useful to disambiguate function application `$f(x, y)$` from implici
 
 #pagebreak()
 
-== Operator precidence <prec>
+== Operator precedence <prec>
 
-Operators which consume positional arguments (of kind `prefix`, `infix` or `postfix`) have an optional precedence specified by a `prec` key which controls how tightly they bind to operands (neighbouring non-whitespace tokens).
+Operators which consume positional arguments (`prefix`, `infix` or `postfix` operators) have an optional precedence specified by a `prec` key which controls how tightly they bind to operands (neighbouring non-whitespace tokens).
 The default precedence is zero.
 
 #grammar-examples(```typc
@@ -428,12 +428,12 @@ The default precedence is zero.
 
   }),
   caption: [
-    Precedence should higher for "stickier" operators, and can be fractional.
+    Precedence should higher for "stickier" operators, and can an integer or float.
   ]
 )
 
-All operators support slot patterns, including prefix operators.
-For example,, this allows you to parse summation notation "$sum_#`var` #`body`$" as a prefix operator with slots containing limits.
+All operators support slot patterns, in particular prefix operators.
+This allows summation notation "$sum_#`var` #`body`$" to be parsed as a prefix operator with slots, for example.
 #grammar-examples(```typc
   add: (infix: $+$, prec: 1, assoc: true),
   dot: (infix: $dot$, prec: 2),
@@ -442,9 +442,9 @@ For example,, this allows you to parse summation notation "$sum_#`var` #`body`$"
   grp: (match: $(slot("body*"))$),
   ```,
   (
-    $sum_i x_i + y + z$,
-    $sum_i (x_i + y_i) + z$,
-    $sum_i (x_i dot y_i + z_i)$,
+    $sum_i alpha x_i + y + z$,
+    $sum_i alpha (x_i + y_i) + z$,
+    $sum_i alpha (x_i dot y_i + z_i)$,
   ),
   caption: [
     Summation notation as a prefix operator with higher precedence than addition.
@@ -498,10 +498,10 @@ grp: (match: box),
   `$1 plus.o "abc"$`,
   `$1 plus.o #box($a b c$)$`,
 ), caption: [
-  Different ways to parse multiple juxtiposed tokens. The trailing red symbols show the `rest` argument returned by `parsely.parse()`, containing content that failed to parse.
+  Different ways to parse multiple juxtaposed tokens. The trailing red symbols show the `rest` argument returned by `parsely.parse()`, containing content that failed to parse.
 ])
 
-Alternatively, juxtiposition can be parsed as an infix operator with an empty pattern (`$$` or `none`).
+Alternatively, juxtaposition can be parsed as an infix operator with an empty pattern (`$$` or `none`).
 This is useful for parsing implicit multiplication, in which case the operator is also given a product-level precedence, as in @example-juxt.
 
 Because the empty pattern always matches, #highlight[juxtaposition operators should appear later than other infix operators] in the grammar dictionary, otherwise $a times b$ is parsed as three tokens $(a, times, b)$ juxtaposed); #highlight[and before match operators], otherwise trailing tokens will be encountered (and parsing halted) before the parser realises the tokens can be interpreted as the right-hand argument of the juxtaposition operator.
