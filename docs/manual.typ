@@ -568,7 +568,7 @@ Similar post-order tree walks can be used to rewrite nodes, reorder arguments, e
   set heading(outlined: false)
   set heading(offset: 1)
   show heading.where(level: 2): set heading(outlined: true)
-  let url = PUBLIC_SOURCE_URL + "docs/" + path
+  let url = PUBLIC_SOURCE_URL + "/docs/" + path
   text(tint.darken(40%), emph[Source code: #link(url, raw(path, lang: none))])
   v(-2em)
   include path
