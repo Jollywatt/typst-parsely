@@ -561,8 +561,9 @@ Similar post-order tree walks can be used to rewrite nodes, reorder arguments, e
 #let example-file(path, tint) = {
   show: block.with(
     inset: 1em,
+    width: 100%,
     fill: tint.lighten(95%),
-    stroke: (thickness: 1pt, paint: tint.lighten(50%), dash: (20pt, 20pt)),
+    stroke: (thickness: 1pt, paint: tint.lighten(50%), dash: (1pt, 1pt)),
   )
   set heading(outlined: false)
   set heading(offset: 1)
@@ -573,10 +574,13 @@ Similar post-order tree walks can be used to rewrite nodes, reorder arguments, e
   include path
 }
 
+#pagebreak()
+
 = Examples
 
 This section shows some more interesting applications of Parsely.
 Each section is included from an example file at
 #{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
 
+#example-file("examples/cetz-tree.typ", blue)
 #example-file("examples/pariman.typ", green)
