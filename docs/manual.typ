@@ -2,11 +2,10 @@
 #import "@preview/cetz:0.4.2"
 #import "../src/exports.typ" as parsely: *
 
+#let PUBLIC_SOURCE_URL = sys.inputs.at("source-url", default: none)
 #let typst-toml = toml("../typst.toml")
 #show "{{VERSION}}": typst-toml.package.version
 #show "{{PACKAGE_NAME}}": typst-toml.package.name
-
-#let PUBLIC_SOURCE_URL = sys.inputs.at("source-url", default: none)
 
 #set page(margin: (x: 25mm, y: 20mm))
 #set heading(numbering: "1.", supplement: none)
@@ -14,7 +13,6 @@
 #set text(font: "Fira Sans")
 #show raw: set text(1.1em, font: "Fira Code", weight: 500)
 #show link: it => underline(it)
-
 #show figure: set align(left)
 #show figure.caption: set text(0.8em)
 #set par(justify: true)
@@ -24,9 +22,7 @@
     let label = r.supplement
     if label == auto { label = r.element.body }
     link(r.element.location(), strong(label))
-  } else {
-    r
-  }
+  } else { r }
 }
 
 
@@ -56,31 +52,29 @@
   let c = calc.rem(array(jumble.md4(text.rev())).sum(), 70)*1%
   color.oklch(70%, c, h)
 }
+
 #let waterfall(tree) = walk(tree, post: it => {
   let (head, args, slots) = it
-
   let c = hash-color(head)
   let ctext = text.with(0.8em, c)
-  slots = slots.pairs().map(((k, v)) => [
-    #ctext[#k] #v
-  ])
-
+  slots = slots.pairs().map(((k, v)) => [#ctext[#k] #v])
   args = slots + args
-  
-  let gap = 3pt
 
-  box(
+  let gap = 3pt
+  show: box.with(
     stroke: (rest: 0.5pt + c, top: 1.5pt + c, bottom: none),
     radius: (top: 5pt),
-    grid(
+  )
+  grid(
     align: bottom,
     inset: (x: gap, top: gap),
     columns: 1 + args.len(),
     ctext(strong(head)), ..args,
-    ..range(args.len()).map(x => grid.vline(x: x + 1, stroke: 0.5pt + c))
-  ))
+    ..range(args.len()).map(x => {
+      grid.vline(x: x + 1, stroke: 0.5pt + c)
+    }),
+  )
 }, leaf: math.equation)
-
 
 #let grammar-examples(grammar-block, eqns, ..args, styler: (t, g) => waterfall(t)) = {
   let grammar = eval("(\n"+grammar-block.text+"\n)", scope: (slot: slot, tight: tight, loose: loose))
@@ -97,7 +91,6 @@
     }),
     frame({
       emph[Parsing examples] + v(-1em)
-      // set text(1.1em)
       grid(
         columns: (2fr, auto, 3fr),
         align: (right + bottom, center + bottom, left),
@@ -120,7 +113,7 @@
     import "@preview/jumble:0.0.1"
     let h = array(jumble.md4(text)).sum()*5deg
     let s = calc.rem(array(jumble.md4(text.rev())).sum(), 100)*1%
-    color.hsv(h, 80%, 70%)
+    color.oklch(65%, 40%, h)
   }
 
   let regions(tree, grammar) = context util.walk(tree, post: it => {
@@ -181,13 +174,13 @@
 #[
   #set text(15pt)
   #box(title[#typst-toml.package.name])
-  #text(0.8em)[version #typst-toml.package.version]
-  #h(1fr)
-  #if PUBLIC_SOURCE_URL != none { link(PUBLIC_SOURCE_URL)[Source] }
+  #text(0.8em)[
+    version #typst-toml.package.version
+    #if PUBLIC_SOURCE_URL != none { link(PUBLIC_SOURCE_URL)[source] }
+  ]
 
   Parse equations with Typst
 ]
-
 
 
 #v(1fr)
@@ -347,7 +340,7 @@ Pattern matching is done by the function `parsely.match(pattern, expr)`, which r
 #example(```typ
 #import parsely: slot
 #parsely.match($1 + slot("rhs")$, $1 + x^2$) \
-#parsely.match($A B C$, $A B Omega$)
+#parsely.match($A B C$, $A B Omega$) \
 ```)
 
 Slots are wildcard tokens that match any content.
@@ -565,19 +558,25 @@ caption: [Traversing the syntax tree from @example-tree to output a string.]) <e
 Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
 
-#let example-file(path) = {
+#let example-file(path, tint) = {
   show: block.with(
     inset: 1em,
-    fill: orange.lighten(90%),
-    stroke: (thickness: 1pt, paint: orange.lighten(60%), dash: (10pt, 10pt)),
+    fill: tint.lighten(95%),
+    stroke: (thickness: 1pt, paint: tint.lighten(50%), dash: (20pt, 20pt)),
   )
   set heading(outlined: false)
   set heading(offset: 1)
   show heading.where(level: 2): set heading(outlined: true)
   let url = PUBLIC_SOURCE_URL + "docs/" + path
-  emph[Source code: #link(url, raw(path, lang: none))]
+  text(tint.darken(40%), emph[Source code: #link(url, raw(path, lang: none))])
+  v(-2em)
   include path
 }
 
 = Examples
-#example-file("examples/pariman.typ")
+
+This section shows some more interesting applications of Parsely.
+Each section is included from an example file at
+#{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
+
+#example-file("examples/pariman.typ", green)
