@@ -30,7 +30,7 @@
         if m == false { return false }
         let (slots, tokens) = m
 
-        let args = util.content-fields-to-arguments(fn, slots)
+        let args = util.element-fields-to-arguments(fn, slots)
 
         let op = (
           kind: function,

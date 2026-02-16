@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-Find all typst element definitions and find their field types (positional, variadic, named).
-
-Outputs "content-positional-args.json".
-
-This script expects to be run at the root of git@github.com:typst/typst.git.
-"""
-
 import argparse
 import json
 from pathlib import Path
@@ -14,8 +6,6 @@ from typing import Optional
 import tree_sitter_rust as tsrust
 from tree_sitter import Language, Parser
 
-
-# Elements to exclude from the output
 EXCLUDED = {
     "counter-update",
     "layout",
@@ -125,17 +115,17 @@ def extract_elem_from_struct(struct_node, elem_attr_node) -> Optional[tuple]:
     """Extract element info from a struct_item node."""
     type_id = find_child(struct_node, "type_identifier")
     if not type_id:
-        return None
+        return
     
     struct_name = get_text(type_id)
     elem_name = extract_name_from_attr(elem_attr_node) or derive_elem_name(struct_name)
     
     if elem_name in EXCLUDED:
-        return None
+        return
     
     field_list = find_child(struct_node, "field_declaration_list")
     if not field_list:
-        return None
+        return
     
     # Extract fields with their attributes
     positional = []
@@ -164,8 +154,10 @@ def extract_elem_from_struct(struct_node, elem_attr_node) -> Optional[tuple]:
         elem_info["positional"] = positional
     if variadic:
         elem_info["variadic"] = variadic
+
+    if elem_info:
+        return (elem_name, elem_info)
     
-    return (elem_name, elem_info)
 
 
 def extract_from_file(file_path: Path, parser: Parser) -> dict:
@@ -196,39 +188,32 @@ def extract_from_file(file_path: Path, parser: Parser) -> dict:
 
 def main():
     # Parse command line arguments
-    parser_arg = argparse.ArgumentParser(description="Extract element definitions from Typst repo")
+    parser_arg = argparse.ArgumentParser(description="""
+        Extract Typst element definitions in rust source code and find their field types (positional, variadic, named),
+        outputting to a JSON file.""", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     parser_arg.add_argument("typst_repo", type=Path, help="Path to the typst repository")
+    parser_arg.add_argument("--output", type=Path, help="Path for JSON output", default="../src/element-args.json")
     args = parser_arg.parse_args()
-    
-    typst_repo = args.typst_repo
-    if not typst_repo.exists():
-        print(f"Error: Path does not exist: {typst_repo}")
-        return
-    
-    # Setup tree-sitter parser
-    parser = Parser(Language(tsrust.language()))
-    
-    # Find all Rust files
-    crates_dir = typst_repo / "crates"
-    if not crates_dir.exists():
-        print(f"Error: crates directory not found at {crates_dir}")
-        return
-    
-    rust_files = list(crates_dir.rglob("*.rs"))
+
+    if not (args.typst_repo / "Cargo.toml").exists():
+        print(f"Path {args.typst_repo} does not look like a Rust project (no `Cargo.toml`)")
+        exit(1)
+
+    # Find all Rust source files
+    rust_files = list(args.typst_repo.rglob("*.rs"))
     print(f"Found {len(rust_files)} Rust files")
     
     # Extract from all files
+    parser = Parser(Language(tsrust.language()))
     result = {}
     for rust_file in rust_files:
-        file_result = extract_from_file(rust_file, parser)
-        result.update(file_result)
-    
+        result.update(extract_from_file(rust_file, parser))
     print(f"Found {len(result)} elem definitions")
     
     # Write output
-    output_file = Path(__file__).parent.parent / "src" / "content-positional-args.json"
-    output_file.write_text(json.dumps(result, indent=2))
-    print(f"JSON written to: {output_file}")
+    args.output.write_text(json.dumps(result, indent=2))
+    print(f"JSON written to: {args.output}")
 
 
 if __name__ == "__main__":

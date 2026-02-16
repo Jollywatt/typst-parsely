@@ -43,7 +43,7 @@
   post(pre(it).map(walk-array.with(pre: pre, post: post, leaf: leaf)))
 }
 
-#let content-positional-args = json("content-positional-args.json")
+#let ELEMENT_ARGS = json("element-args.json")
 
 /// Construct an element given the content function and a dictionary of fields.
 /// 
@@ -51,8 +51,8 @@
 /// This function takes care of those, providing a uniform interface for constructing elements.
 /// 
 /// The field dictionary should be in the same order as given when calling `element.fields()`.
-#let content-fields-to-arguments(fn, fields) = {
-  let arg-types = content-positional-args.at(repr(fn))
+#let element-fields-to-arguments(fn, fields) = {
+  let arg-types = ELEMENT_ARGS.at(repr(fn), default: (:))
 
   let pos = ()
   if "positional" in arg-types {
@@ -77,7 +77,7 @@
     else { (k, w(v)) }
   }).to-dict()
   let fn = it.func()
-  let args = content-fields-to-arguments(fn, fields)
+  let args = element-fields-to-arguments(fn, fields)
   post(fn(..args))
 }
 
