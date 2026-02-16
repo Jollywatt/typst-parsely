@@ -583,4 +583,5 @@ Each section is included from an example file at
 #{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
 
 #example-file("examples/cetz-tree.typ", blue)
+#example-file("examples/venn.typ", yellow)
 #example-file("examples/pariman.typ", green)
