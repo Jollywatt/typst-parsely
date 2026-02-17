@@ -7,6 +7,7 @@
   ">": (infix: $>$, prec: 0),
   "<=": (infix: $<=$, prec: 0),
   ">=": (infix: $>=$, prec: 0),
+  cmp: (infix: slot("op", any: ($=$, $!=$)), prec: 0),
 
   
   add: (infix: $+$, prec: 1, assoc: true),
