@@ -92,3 +92,11 @@
   it + (depth: depth + 1)
 })
 
+#let stringify(it) = {
+  if type(it) == str { return it }
+  if "text" in it.fields() {
+    it.text
+  } else {
+    repr(it)
+  }
+}
