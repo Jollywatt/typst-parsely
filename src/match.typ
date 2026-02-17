@@ -167,7 +167,11 @@
       }
       false
     } else if "guard" in slot {
-      if (slot.guard)(expr) { (:) } else { false }
+      let guard = slot.guard
+      if type(guard) == regex {
+        guard = it => util.stringify(it).match(guard) != none
+      }
+      if (guard)(expr) { (:) } else { false }
     } else {
       (:)
     }

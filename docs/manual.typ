@@ -77,7 +77,7 @@
 }, leaf: math.equation)
 
 #let grammar-examples(grammar-block, eqns, ..args, styler: (t, g) => waterfall(t)) = {
-  let grammar = eval("(\n"+grammar-block.text+"\n)", scope: (slot: slot, tight: tight, loose: loose))
+  let grammar = eval("(\n"+grammar-block.text+"\n)", scope: (slot: slot, tight: tight, loose: loose, parsely: parsely))
   figure(grid(
     frame(fill: code-fill, {
       let lines = grammar-block.text.split("\n")
@@ -331,19 +331,32 @@ All operators support @slots, consuming tokens as _slot arguments_.
 
 Operator patterns are snippets of content which can be matched against sequences of tokens in order to parse content.
 Patterns can be:
-- *Single tokens*, such as `$+$` or `$in$`.
-- *Sequences of tokens*, such as `$::$`, `$=^"def"$` or `$dif/(dif x)$`.
-- *Slot patterns*, such as `$sum_slot("var")$` or `$[slot("left*"), slot("right*")]$`.
-- *Element functions*, such as `math.frac`, as a shorthand for the slot pattern matching that element and capturing its fields, such as `$frac(slot("num"), slot("denom"))$`.
+
+- *Single tokens*, like `$+$` or `$in$`.
+
+- *Sequences of tokens*, like `$::$`, `$=^"def"$` or `$dif/(dif x)$`.
+
+- *Slot patterns*, like `$sum_slot("var")$` or `$[slot("left*"), slot("right*")]$`.
+
+- *Element functions*, like `math.frac`, as a shorthand for the slot pattern matching that element and capturing its fields, like `$frac(slot("num"), slot("denom"))$`.
 
 Pattern matching is done by the function `parsely.match(pattern, expr)`, which returns a dictionary if the match is successful and `false` otherwise.
 #example(```typ
 #import parsely: slot
 #parsely.match($1 + slot("rhs")$, $1 + x^2$) \
 #parsely.match($A B C$, $A B Omega$) \
+#parsely.match(math.frac, $1/2$) \ // same as $slot("num")/slot("denom")$
 ```)
 
-Slots are wildcard tokens that match any content.
+Slots are wildcard tokens that match content in several ways:
+- `slot(name)` matches any single token.
+- `slot(name, many: true, greedy: bool)` @slot-many[matches any sequence].
+- `slot(name, any: array)` @slot-any[matches any of a set of patterns].
+- `slot(name, guard: function)` @slot-guard[matches a token conditionally].
+- The special patterns `parsely.tight` and `parsely.loose` allow @tight-loose[matching whitespace].
+
+=== Matching sequences greedily or lazily <slot-many>
+
 A slot such as `slot("rhs")` will match a single token, but *multiple tokens* can be matched with `slot("rhs", many: true)` or `slot("rhs*")` for short.
 
 #example(```typ
@@ -351,30 +364,56 @@ A slot such as `slot("rhs")` will match a single token, but *multiple tokens* ca
 #parsely.match($1; 2; slot("etc*")$, $1; 2; 3; 4$)   // multi token slot
 ```)
 
-=== Matching sequences greedily or lazily
-
 By default, multi-token slots are *greedy*, preferring to match more tokens when there is choice.
-Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?")` match as few tokens as possible.
+Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?")` for short match as few tokens as possible.
 
 #example(```typ
 #parsely.match($slot("greedy*"), slot("rest*")$, $alpha, beta, gamma$) \
 #parsely.match($slot("lazy*?"),  slot("rest*")$, $alpha, beta, gamma$)
 ```)
 
-#pagebreak()
-=== Matching whitespace tightly or loosely
+=== Matching any pattern in a union <slot-any>
+
+Slots with an `any` argument containing an array of sub-patterns only match those sub-patterns (in the order they are given).
+
+This is sometimes useful for grouping many similar tokens together into one operator.
+
+#grammar-examples(```typ
+comp: (infix: slot("op", any: ($=$, $!=$, $<$, $>$, $<=$, $>=$)))
+```, (
+  $xi = 2 > epsilon != 0$,
+), caption: [
+  All comparison tokens are parsed as the `comp` operator tagged by an `"op"` slot.
+])
+
+=== Matching conditionally (slot guards) <slot-guard>
+
+Slots may be made conditional by supplying a boolean predicate in the `guard` argument.
+A predicate is a function accepting the matched content and returning a boolean.
+A regular expression `re` can also be used as a shortcut for the predicate function `it => parsely.stringify(it).match(re) != none`.
+
+#grammar-examples(```typ
+sep: (infix: $,$, assoc: true),
+number: (match: slot("it", guard: regex("^[\d\.]+$"))),
+text: (match: slot("it", guard: it => it.func() == text)),
+```, (
+  $pi, "hi", circle^2, 1.414$,
+))
+
+
+=== Matching whitespace tightly or loosely <tight-loose>
 
 The presence of whitespace in equations is not always visible (for example, `$f(x)$` and #box[`$f (x)$`] are rendered identically) and whitespace is usually ignored when pattern matching.
 However, the presence or lack of whitespace between tokens can be explicitly matched with the special `parsely.tight` and `parsely.loose` patterns.
 For example, you can write a pattern that matches `$k!$` but not `$k !$` by using `tight`:
 #example(```typ
 #import parsely: tight, loose
-#parsely.match($slot("a") !$, $A!$) \         // matches (insensitive)
-#parsely.match($slot("a") !$, $A !$) \        // matches (insensitive)
-#parsely.match($slot("a") tight !$, $A!$) \   // matches
-#parsely.match($slot("a") loose !$, $A !$) \  // matches
-#parsely.match($slot("a") tight !$, $A !$) \  // no match (too loose)
-#parsely.match($slot("a") loose !$, $A!$) \   // no match (too tight)
+#parsely.match($slot("a") !$, $A!$)         // matches (insensitive)
+#parsely.match($slot("a") !$, $A !$)        // matches (insensitive)
+#parsely.match($slot("a") tight !$, $A!$)   // matches
+#parsely.match($slot("a") loose !$, $A !$)  // matches
+#parsely.match($slot("a") tight !$, $A !$)  // no match (too loose)
+#parsely.match($slot("a") loose !$, $A!$)   // no match (too tight)
 ```)
 This can be useful to disambiguate function application `$f(x, y)$` from implicit multiplication, `$x^2 (1 - x)$`, for example.
 
@@ -397,7 +436,11 @@ This can be useful to disambiguate function application `$f(x, y)$` from implici
     Similarly, `fact` and `assert` are distinguished by whitespace patterns.
 ])
 
-#pagebreak()
+
+
+
+
+// #pagebreak()
 
 == Operator precedence <prec>
 
@@ -448,7 +491,7 @@ This allows summation notation "$sum_#`var` #`body`$" to be parsed as a prefix o
 )
 
 
-#pagebreak()
+// #pagebreak()
 == Associativity of infix operators <assoc>
 
 Infix operators additionally have an associativity specified by an `assoc` key which applies when the same operator appears in a sequence.
@@ -514,6 +557,7 @@ grp: (match: $(slot("body*"))$), // "juxt" must be before this
 ), caption: [
   Parsing implicit multiplication.
 ]) <example-juxt>
+
 
 == Parsing and syntax trees
 
