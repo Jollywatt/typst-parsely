@@ -1,10 +1,13 @@
 #import "/src/match.typ": *
+#import "/src/util.typ": stringify
 
-#let assert-match(pattern, expr, slots) = {
-  if type(slots) == dictionary {
-    slots = slots.keys().zip(slots.values().map(unwrap)).to-dict()
+#let assert-match(pattern, ..expr-result) = {
+  for (expr, result) in expr-result.pos().chunks(2) {
+    if type(result) == dictionary {
+      result = result.keys().zip(result.values().map(unwrap)).to-dict()
+    }
+    assert.eq(match(pattern, expr), result)
   }
-  assert.eq(match(pattern, expr), slots)
 }
 
 #assert-match("A", "A", (:))
@@ -23,11 +26,10 @@
   $A B$,
   (x: $A$.body, y: $B$.body),
 )
-#assert-match($slot("x") slot("x")$, $A B$, false)
 #assert-match(
   $slot("x") slot("x")$,
-  $A A$,
-  (x: $A$.body),
+  $A B$, false,
+  $A A$, (x: $A$.body),
 )
 
 #assert-match(
@@ -139,3 +141,46 @@
   (stroke: stroke(5pt), fill: blue),
 )
 
+// union slots
+#assert-match(
+  $1 slot("op", any: #($<$, $=$, $>$)) 2$,
+  $1 = 2$,
+  (op: $=$)
+)
+#assert-match(
+  $1 slot("op", any: #($<$, $=$, $>$)) 2$,
+  $1 != 2$,
+  false
+)
+#assert-match(
+  $x slot("op", any: #($<$, $=_slot("eq-type")$, $>$)) y$,
+  $x =_a y$, (op: $=_a$, eq-type: $a$),
+  $x < y$, (op: $<$),
+  $x + y$, false
+)
+
+// predicate slots
+#assert-match(
+  slot("num", guard: it => stringify(it).match(regex("^\d+$")) != none),
+  [1234], (num: [1234]),
+  $1234$, (num: $1234$),
+  "1234", (num: "1234"),
+  [abc], false,
+  "abc", false,
+)
+#assert-match(
+  slot("upper", guard: regex("^\p{Lu}+$")),
+  [UPPERCASE], (upper: [UPPERCASE]),
+  $X$, (upper: $X$),
+  [NotUpper], false,
+  $x$, false,
+)
+
+#assert-match(
+  slot("hi*", guard: it => util.as-array(it).all(n => {
+    util.is-space(n) or stringify(n) in "xyz"
+  })),
+  $x y z$, (hi: $x y z$),
+  $x y 1$, false,
+  $x$, (hi: $x$),
+)
