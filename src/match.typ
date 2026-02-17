@@ -58,7 +58,7 @@
 
 
 #let match-sequence(pattern, expr, match: none, ctx: (:)) = {
-  pattern = tighten(pattern)
+  pattern = tighten(util.as-array(pattern))
 
   let (pi, ei) = (0, 0)
   let is-tight = false
@@ -66,7 +66,7 @@
   let p-space = false
   while pi < pattern.len() {
 
-    // no match if expression tokens run out before whole pattern has used
+    // no match if expression tokens run out before whole pattern has been used
     if ei >= expr.len() { return false }
 
     let p = pattern.at(pi)
@@ -157,6 +157,22 @@
   pattern = unwrap(pattern)
   expr = unwrap(expr)
 
+  let test-slot-guard(slot, expr) = {
+    if "any" in slot {
+      // this is a sum slot / enum slot
+      for subpattern in slot.any {
+        let m = match(subpattern, expr)
+        if m == false { continue }
+        return m
+      }
+      false
+    } else if "guard" in slot {
+      if (slot.guard)(expr) { (:) } else { false }
+    } else {
+      (:)
+    }
+  }
+
   if is-slot(pattern) {
     let name = slot-name(pattern)
 
@@ -165,7 +181,10 @@
     if name in ctx {
       if ctx.at(name) != expr { return false }
     } else {
+      let guard = test-slot-guard(pattern.value, expr)
+      if guard == false { return false }
       ctx.insert(name, expr)
+      ctx += guard
     }
 
   // pattern is an uncalled content function

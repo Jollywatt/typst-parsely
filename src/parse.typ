@@ -69,9 +69,12 @@
       let (op, tokens) = m
       op.name = name        
       matching-ops.push((op, tokens))
+      break // if selecting first break early
+      // may extend this in future
     }
 
     // choose one operator
+    let old-tokens = tokens
     let (op, tokens) = matching-ops.at(0, default: (none, tokens))
 
     
@@ -115,6 +118,14 @@
     if op != none {
       for (key, slot) in op.slots {
         if type(slot) != content { continue }
+
+        // danger of infinite recursion
+        // do not parse a slot's content if it is the same as the content that
+        // gave rise to this slot in the first place
+        let m = match-sequence(slot, old-tokens, match: match)
+        // panic(old-tokens, slot, m)
+        if m != false { continue }
+
         let (tree, rest) = parse(slot, grammar, min-prec: -float.inf)
         // if the whole slot doesn't parse to the end, keep unparsed
         if rest != none { continue }
@@ -185,7 +196,7 @@
     
     if op.kind == "postfix" {
       if op.prec < min-prec { break }
-      left = (head: op.name, args: (left,), slots: (:))
+      left = (head: op.name, args: (left,), slots: op.slots)
 
       tokens = subtokens // consumed op
       continue
@@ -201,7 +212,7 @@
       let assoc = op.at("assoc", default: alignment.left)
       if assoc == true {
         // n-ary
-        left = (head: op.name, args: (left,), slots: (:))
+        left = (head: op.name, args: (left,), slots: op.slots)
         let abort = false
         while true {
           let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1e-3)
@@ -230,7 +241,7 @@
         // don't allow rhs of operator to be none
         if right == none { break }
 
-        left = (head: op.name, args: (left, right), slots: (:))
+        left = (head: op.name, args: (left, right), slots: op.slots)
 
         tokens = as-array(rest)
         continue
