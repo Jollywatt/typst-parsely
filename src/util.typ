@@ -95,7 +95,7 @@
 #let stringify(it) = {
   if type(it) == str { return it }
   if "text" in it.fields() {
-    it.text
+    stringify(it.text)
   } else {
     repr(it)
   }
