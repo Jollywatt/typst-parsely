@@ -261,7 +261,38 @@
 
 
 
+#let example-file(path, tint) = {
+  show: block.with(
+    inset: 1em,
+    width: 100%,
+    fill: tint.lighten(95%),
+    stroke: (thickness: 1pt, paint: tint.lighten(50%), dash: (1pt, 1pt)),
+  )
+  set heading(outlined: false)
+  set heading(offset: 1)
+  show heading.where(level: 2): set heading(outlined: true)
+  let url = PUBLIC_SOURCE_URL + "/docs/" + path
+  text(tint.darken(40%), emph[Source code: #link(url, raw(path, lang: none))])
+  v(-2em)
+  include path
+}
 
+#pagebreak()
+
+
+= Usage examples
+
+This section contains some intresting self-contained applications of Parsely.
+Each section is a separate example file which may be found at
+#{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
+
+#example-file("examples/cetz-tree.typ", orange)
+#example-file("examples/venn.typ", yellow)
+#example-file("examples/calc.typ", blue)
+#example-file("examples/pariman.typ", green)
+
+
+#pagebreak()
 
 
 = Guide
@@ -602,30 +633,3 @@ caption: [Traversing the syntax tree from @example-tree to output a string.]) <e
 Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
 
-#let example-file(path, tint) = {
-  show: block.with(
-    inset: 1em,
-    width: 100%,
-    fill: tint.lighten(95%),
-    stroke: (thickness: 1pt, paint: tint.lighten(50%), dash: (1pt, 1pt)),
-  )
-  set heading(outlined: false)
-  set heading(offset: 1)
-  show heading.where(level: 2): set heading(outlined: true)
-  let url = PUBLIC_SOURCE_URL + "/docs/" + path
-  text(tint.darken(40%), emph[Source code: #link(url, raw(path, lang: none))])
-  v(-2em)
-  include path
-}
-
-#pagebreak()
-
-= Examples
-
-This section shows some more interesting applications of Parsely.
-Each section is included from an example file at
-#{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
-
-#example-file("examples/cetz-tree.typ", blue)
-#example-file("examples/venn.typ", yellow)
-#example-file("examples/pariman.typ", green)
