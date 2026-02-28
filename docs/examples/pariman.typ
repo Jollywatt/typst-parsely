@@ -77,11 +77,3 @@ A bowl of petunias of mass #define("m", "1.1", "kg") pops into existence at #def
 
 Ignoring air resistance, the petunias smash into the ground at velocity:
 #derive("V", $ sqrt(2 g h) $)
-
-== Relativistic kinetic energy
-
-A proton with rest mass #define("m0", "1.673e-27", "kg") is accelerated to #define("v", "2.5e8", "m/s"). With the speed of light #define("c", "3e8", "m/s"), the Lorentz factor is:
-#derive("γ", $ 1/sqrt(1 - v^2/c^2) $)
-
-The relativistic kinetic energy is:
-#derive("K", $ (gamma - 1) "m0" c^2 $)
