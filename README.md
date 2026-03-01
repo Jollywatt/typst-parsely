@@ -7,7 +7,7 @@ _Parse equations with Typst_.
 Tools to parse Typst equations into structured syntax trees using user-specified grammars, supporting prefix/infix/postfix operators, precedence, associativity and recursive pattern matching allowing complex mathematical expressions to be parsed.
 
 ```typ
-#import "@preview/parsely:0.1.0"
+#import "@preview/parsely:{{VERSION}}"
 ```
 
 
