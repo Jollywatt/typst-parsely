@@ -257,8 +257,6 @@
   ```, scope: (tree: tree, grammar: grammar))
 
 
-
-
 #let example-file(path, tint) = {
   show: block.with(
     inset: 1em,
@@ -272,7 +270,10 @@
   let url = PUBLIC_SOURCE_URL + "/docs/" + path
   text(tint.darken(40%), emph[Source code: #link(url, raw(path, lang: none))])
   v(-2em)
-  include path
+
+  // don't include first line of example, which imports parsely
+  let src = read(path).split("\n").slice(1).join("\n")
+  eval(src, mode: "markup", scope: (parsely: parsely))
 }
 
 #pagebreak()
