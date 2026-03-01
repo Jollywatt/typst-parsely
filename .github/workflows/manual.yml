@@ -14,8 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: fontist/setup-fontist@v2
-        with:
-          cache-dependency-path: .github/workflows/manual.yml
       - run: fontist install "Fira Code"
       - run: fontist install "Fira Sans"
       - uses: typst-community/setup-typst@v3

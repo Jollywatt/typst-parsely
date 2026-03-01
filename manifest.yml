@@ -1,0 +1,15 @@
+---
+# Font dependencies for the typst manual
+Fira Code:
+  - Regular
+  - Bold
+  - Light
+  - Medium
+  - SemiBold
+Fira Sans:
+  - Regular
+  - Italic
+  - Bold
+  - Bold Italic
+  - Light
+  - Light Italic
