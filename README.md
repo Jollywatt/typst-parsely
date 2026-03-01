@@ -2,12 +2,12 @@
 
 _Parse equations with Typst_.
 
-[![Manual](https://img.shields.io/badge/v0.1.0-manual.pdf-green)](https://github.com/Jollywatt/typst-parsely/releases/download/v0.1.0/manual.pdf)
+[![Manual](https://img.shields.io/badge/dev-manual.pdf-orange)](https://github.com/Jollywatt/typst-parsely/releases/download/main/manual.pdf)
 
 Tools to parse Typst equations into structured syntax trees using user-specified grammars, supporting prefix/infix/postfix operators, precedence, associativity and recursive pattern matching allowing complex mathematical expressions to be parsed.
 
 ```typ
-#import "@preview/parsely:0.1.0"
+#import "@preview/parsely:{{VERSION}}"
 ```
 
 
@@ -25,7 +25,7 @@ using the main function `parsely.parse(eqn, grammar)` where the  grammar
 defines the syntax of the operators that form the nodes in the tree.
 
 
-See [the manual](https://github.com/Jollywatt/typst-parsely/releases/download/v0.1.0/manual.pdf) for documentation and complete usage examples, including:
+See [the manual](https://github.com/Jollywatt/typst-parsely/releases/download/main/manual.pdf) for documentation and complete usage examples, including:
 - drawing expression trees from equations
 - numerically evaluating equations
 - turning equations into functions for plotting
