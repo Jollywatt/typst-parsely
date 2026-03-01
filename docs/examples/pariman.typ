@@ -1,4 +1,4 @@
-#import "@preview/parsely:0.1.0"
+#import "../../src/exports.typ" as parsely
 #import "@preview/pariman:0.2.0": *
 
 #show "Pariman": link("https://github.com/pacaunt/pariman")[Pariman]
