@@ -1,4 +1,4 @@
-#import "@preview/parsely:0.1.0"
+#import "../../src/exports.typ" as parsely
 #import "@preview/cetz:0.4.2"
 
 #show "CeTZ": link.with("https://cetz-package.github.io/")
