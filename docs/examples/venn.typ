@@ -1,4 +1,4 @@
-#import "../../src/exports.typ" as parsely
+#import "@preview/parsely:0.1.0"
 #import "@preview/cetz:0.4.2"
 #import "@preview/cetz-venn:0.1.4"
 

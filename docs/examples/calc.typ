@@ -1,4 +1,4 @@
-#import "../../src/exports.typ" as parsely
+#import "@preview/parsely:0.1.0"
 #import "@preview/lilaq:0.5.0" as lq
 
 #show "Lilaq": link.with("https://lilaq.org")
