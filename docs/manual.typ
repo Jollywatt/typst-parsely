@@ -119,7 +119,7 @@
   let regions(tree, grammar) = context util.walk(tree, post: it => {
     let c = hash-color(it.head)
     show: rect.with(
-      stroke: 2pt + c,
+      stroke: 1.5pt + c,
       fill: c.transparentize(95%),
       inset: 4pt,
     )
@@ -166,7 +166,7 @@
         (text(c, strong(it.head)), ..it.args, ..it.slots.values())
       }, leaf: it => $it$)
       cetz.draw.set-style(content: (padding: .1))
-      cetz.tree.tree(a, grow: 0.5, spread: 0)
+      cetz.tree.tree(a, grow: 0.4, spread: 0)
     }))),
   )
 }
@@ -186,8 +186,6 @@
 #v(1fr)
 
 #align(center, cover-graphic)
-
-#v(1fr)
 
 #context outline(target: selector(heading).after(here()))
 
