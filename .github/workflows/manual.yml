@@ -14,6 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: typst-community/setup-typst@v3
+      
+      - name: Install typship
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: typship
+
+      - name: Install package locally
+        run: typship install local
+          
       - run: >-
           typst compile docs/manual.typ manual.pdf
           --root .
@@ -27,7 +36,7 @@ jobs:
           name: manual
           path: manual.pdf
 
-      # Tagged release (v1.0.0, etc.)
+      # Tagged release
       - name: Create versioned release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
