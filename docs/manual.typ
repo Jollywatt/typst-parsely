@@ -279,7 +279,7 @@
 #pagebreak()
 
 
-= Usage examples
+= Usage examples <examples>
 
 This section contains some intresting self-contained applications of Parsely.
 Each section is a separate example file which may be found at
@@ -301,7 +301,7 @@ Each section is a separate example file which may be found at
 Grammars define how content is transformed into an abstract syntax tree.
 
 
-A grammar is given as a dictionary where each value is an _operator_ and each key is the operator's name, which becomes the name for corresponding nodes in the syntax tree.
+A grammar is given as a dictionary where each value is an _operator_ and each key is the operator's name, which becomes the name of the corresponding node in the syntax tree.
 
 For example, the simple grammar in @example-grammar defines:
 - the token "$+$" as an associative binary operator of lower precedence than "$times$" so that $a + b times c$ is parsed as $a + (b times c)$
@@ -353,13 +353,13 @@ There are four kinds of operators: `prefix`, `infix`, `postfix` and `match`.
 
 Prefix, infix and postfix operators consume tokens around them as _positional arguments_, subject to @prec[precedence].
 Match operators do not consume tokens to the left or right, but simply match a pattern.
-All operators support @slots, consuming tokens as _slot arguments_.
+All operators support @slots, possibly consuming tokens as _slot arguments_.
 
 
 
 == Pattern matching and slots <slots>
 
-Operator patterns are snippets of content which can be matched against sequences of tokens in order to parse content.
+Operator patterns are used to match sequences of tokens while parsing content.
 Patterns can be:
 
 - *Single tokens*, like `$+$` or `$in$`.
@@ -368,7 +368,7 @@ Patterns can be:
 
 - *Slot patterns*, like `$sum_slot("var")$` or `$[slot("left*"), slot("right*")]$`.
 
-- *Element functions*, like `math.frac`, as a shorthand for the slot pattern matching that element and capturing its fields, like `$frac(slot("num"), slot("denom"))$`.
+- *Element functions*, like `math.frac`, as a shorthand for the slot pattern matching that element and capturing its fields, i.e. `$frac(slot("num"), slot("denom"))$`.
 
 Pattern matching is done by the function `parsely.match(pattern, expr)`, which returns a dictionary if the match is successful and `false` otherwise.
 #example(```typ
@@ -381,7 +381,7 @@ Pattern matching is done by the function `parsely.match(pattern, expr)`, which r
 Slots are wildcard tokens that match content in several ways:
 - `slot(name)` matches any single token.
 - `slot(name, many: true, greedy: bool)` @slot-many[matches any sequence].
-- `slot(name, any: array)` @slot-any[matches any of a set of patterns].
+- `slot(name, any: array)` @slot-any[matches any one of a set of patterns].
 - `slot(name, guard: function)` @slot-guard[matches a token conditionally].
 - The special patterns `parsely.tight` and `parsely.loose` allow @tight-loose[matching whitespace].
 
@@ -404,7 +404,7 @@ Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?
 
 === Matching any pattern in a union <slot-any>
 
-Slots with an `any` argument containing an array of sub-patterns only match those sub-patterns (in the order they are given).
+Slots with an `any` argument containing an array of sub-patterns only match one of those patterns (in the order they are given).
 
 This is sometimes useful for grouping many similar tokens together into one operator.
 
@@ -497,7 +497,7 @@ The default precedence is zero.
 
   }),
   caption: [
-    Precedence should higher for "stickier" operators, and can an integer or float.
+    Precedence is higher for "stickier" operators, and can be an integer or float.
   ]
 )
 
@@ -599,7 +599,7 @@ Each node is a dictionary of the form
 (head: str, args: array, slots: dictionary)
 ```
 where "`head`" is the operator name that was matched at that point in the expression.
-The positional arguments in "`args`" hold the left and right sides of unary or binary operators, while "`slot`" arguments hold the matched values of slots in patterns.
+The positional arguments in "`args`" is an array of positional arguments, holding the left and right sides of unary or binary operators, while "`slot`" arguments hold the matched values of slots in patterns.
 Associative operators may have more than two positional arguments.
 
 For example, using the simple grammar defined in @example-grammar:
@@ -631,4 +631,4 @@ caption: [Traversing the syntax tree from @example-tree to output a string.]) <e
 
 Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
-
+See the source code of the @examples for many different examples of syntax tree manipulations with tree walks.
