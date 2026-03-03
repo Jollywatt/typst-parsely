@@ -16,7 +16,7 @@ def update_readme(readme_path, version):
     
     md = md.replace('{{VERSION}}', version)
     md = md.replace('badge/dev-manual.pdf-orange', f'badge/v{version}-manual.pdf-green')
-    md = md.replace('/releases/download/main/', f'/releases/download/v{version}/')
+    md = md.replace('/releases/download/latest/', f'/releases/download/v{version}/')
 
     with open(readme_path, 'w') as f:
         f.write(md)
