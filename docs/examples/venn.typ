@@ -4,7 +4,7 @@
 
 #show "CeTZ": link.with("https://cetz-package.github.io/")
 
-= Evaluating Boolean formulae
+= Evaluating Boolean formulae <venn>
 
 This example demonstrates how equations may be evaluated by converting them into anonymous functions which can be evaluated by passing a dictionary defining the equation's unknowns.
 We then use this to parse Boolean formulae and plot them using CeTZ and its `cetz-venn` library.

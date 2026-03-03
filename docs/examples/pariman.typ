@@ -1,11 +1,11 @@
 #import "../../src/exports.typ" as parsely
-#import "@preview/pariman:0.2.0": *
+#import "@preview/pariman:0.2.1": *
 
 #show "Pariman": link("https://github.com/pacaunt/pariman")[Pariman]
 
 = Evaluating dimensionful quantities with Pariman 
 
-You can parse equations with Parsely and evaluate them with Pariman by writing a tree post-walk which converts each leaf into a `pariman.quantity` and evaluates each nodes using `pariman.calculation` functions.
+You can parse equations with Parsely and evaluate them with Pariman by writing a tree post-walk which converts each leaf into a `pariman.quantity` and evaluates nodes using `pariman.calculation` functions.
 
 
 #let eval-pariman-node((head, args, slots)) = {
@@ -47,7 +47,7 @@ For example, here is an equation which we first parse then substitute dimensionf
   v: quantity(1.5, "m/s"),
 ))
 
-The following examples use Pariman's in-text quantity declarations, letting you define quantities and derived values with normal equation syntax.
+The following examples use Pariman's _in-text quantity declarations_, letting you define quantities and derived values with normal equation syntax.
 
 
 // define a named quantity
