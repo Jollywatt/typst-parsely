@@ -143,11 +143,11 @@ def extract_elem_from_struct(struct_node, elem_attr_node) -> Optional[tuple]:
         field_name = get_text(field_id)
         attrs = get_preceding_attributes(children, i)
         attr_names = {get_attribute_identifier(attr) for attr in attrs}
-        
-        if "required" in attr_names or "positional" in attr_names:
-            positional.append(field_name)
+
         if "variadic" in attr_names:
             variadic = field_name
+        elif "required" in attr_names or "positional" in attr_names:
+            positional.append(field_name)
     
     elem_info = {}
     if positional:

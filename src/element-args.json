@@ -162,8 +162,7 @@
   },
   "binom": {
     "positional": [
-      "upper",
-      "lower"
+      "upper"
     ],
     "variadic": "lower"
   },
