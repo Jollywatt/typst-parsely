@@ -1,36 +1,50 @@
 #import "match.typ": slot, tight, loose
 
 #let arithmetic = (
-  "=": (infix: $=$, prec: 0),
-  "!=": (infix: $!=$, prec: 0),
-  "<": (infix: $<$, prec: 0),
-  ">": (infix: $>$, prec: 0),
-  "<=": (infix: $<=$, prec: 0),
-  ">=": (infix: $>=$, prec: 0),
-  cmp: (infix: slot("op", any: ($=$, $!=$)), prec: 0),
+  sep: (infix: $,$, prec: -1, assoc: true),
 
-  
+  eq: (infix: $=$,  prec: 0),
+  ne: (infix: $!=$, prec: 0),
+  lt: (infix: $<$,  prec: 0),
+  le: (infix: $<=$, prec: 0),
+  gt: (infix: $>$,  prec: 0),
+  ge: (infix: $>=$, prec: 0),
+
   add: (infix: $+$, prec: 1, assoc: true),
   sub: (infix: $-$, prec: 1),
   plus: (prefix: $+$, prec: 2),
   neg: (prefix: $-$, prec: 2),
 
-  times: (infix: $times$, prec: 2),
-  dot: (infix: $dot$, prec: 2),
   factorial: (postfix: $tight !$, prec: 3),
-  mul: (infix: none, prec: 2.5),
+
+  times: (infix: $times$, prec: 2, assoc: true),
+  dot: (infix: $dot$, prec: 2),
+  mul: (infix: none, prec: 2.5, assoc: true),
 
   group: (match: $(slot("expr*"))$),
+  frac: (match: math.frac),
+  abs: (match: math.abs),
+  binom: (match: $binom(slot("n"), slot("k"))$),
+
   pow: (match: $slot("base")^slot("exp")$),
 
-  union: (infix: $union$, prec: 1),
-  inter: (infix: $inter$, prec: 1),
+  root: (match: math.root(slot("index", guard: it => it != none), slot("radicand"))),
+  sqrt: (match: $sqrt(slot("radicand"))$),
 
-  frac: math.frac,
-  abs: math.abs,
-  norm: math.norm,
-  root: math.root,
+  call: (match: $slot("fn") tight (slot("args*"))$),
+  
+  pi: (match: $pi$),
+  tau: (match: $tau$),
+  ln: (match: $ln$),
+  log: (match: $log$),
+  sin: (match: $sin$),
+  cos: (match: $cos$),
+  tan: (match: $tan$),
+  sinh: (match: $sinh$),
+  cosh: (match: $cosh$),
+  tanh: (match: $tanh$),
+  arcsin: (match: $arcsin$),
+  arccos: (match: $arccos$),
+  arctan: (match: $arctan$),
 
-  op-call: (match: $op(slot("op"))(slot("args*"))$),
-  op: math.op,
 )

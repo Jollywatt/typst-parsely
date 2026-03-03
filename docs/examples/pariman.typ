@@ -13,12 +13,12 @@ You can parse equations with Parsely and evaluate them with Pariman by writing a
   if head == "add" { add(..args) }
   else if head == "sub" { sub(..args) }
   else if head == "mul" { mul(..args) }
-  else if head == "frac" { div(..args) }
+  else if head == "frac" { div(slots.num, slots.denom) }
   else if head == "pow" { pow(slots.base, slots.exp) }
   else if head == "group" { slots.expr }
   else if head == "root" {
-    if args.len() == 1 { root(args.first(), 2) }
-    else if args.len() == 2 { root(args.last(), args.first()) }
+    if "index" in slots { root(slots.radicand, slots.index.value) }
+    else { root(slots.radicand, 2) }
   }
   else { panic(head) }
 }
@@ -69,7 +69,6 @@ The following examples use Pariman's _in-text quantity declarations_, letting yo
 
 I put #define("M", "30.0", "g") of sugar into #define("V", "105", "mL") of water in a cup. After being stirred thoroughly, the sugar solution will have a concentration of:
 #derive("c", $ M/V $)
-
 == Terminal velocity
 
 A bowl of petunias of mass #define("m", "1.1", "kg") pops into existence at #define("h", "12000", "m", magnitude-limit: 5) altitude. Taking gravity to be #define("g", "9.81", "m/s^2") (assuming this is still Earth) the petunias have gravitational potential energy:

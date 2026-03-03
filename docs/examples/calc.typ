@@ -54,10 +54,10 @@ For example, #eqns.map(math.equation.with(block: false)).join(last: [ and ])[, ]
       else if head == "neg" { s => -args.first()(s) }
       else if head == "mul" { s => args.map(a => a(s)).product() }
       else if head == "pow" { s => calc.pow((slots.base)(s), (slots.exp)(s)) }
-      else if head == "frac" { s => args.first()(s)/args.last()(s) }
-      else if head == "op-call" {
+      else if head == "frac" { s => (slots.num)(s)/(slots.denom)(s) }
+      else if head == "call" {
         s => {
-          let fn = (slots.op)(s)
+          let fn = (slots.fn)(s)
           fn((slots.args)(s))
         }
       }

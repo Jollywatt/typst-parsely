@@ -7,19 +7,9 @@
   (it.head, ..it.args, ..it.slots.values())
 })
 
-#let stringify(it) = {
-  if util.is-sequence(it) {
-    it.children.map(stringify).join()
-  } else if type(it) == content {
-    if "text" in it.fields() { it.text }
-    else { repr(it) }
-  } else {
-    repr(it)
-  }
-}
 
 #let compact-sexpr(tree) = walk(tree, post: ((head, args, slots)) => {
-  "(" + (head, ..args, ..slots.values()).map(str).join(" ") + ")"
+  "(" + (head, ..args, ..slots.values()).map(stringify).join(" ") + ")"
 }, leaf: it => stringify(it))
 
 #let test-sexpr(grammar, ..eqn-target-pairs) = {
@@ -61,10 +51,10 @@
 
   // Implicit multiplication and precedence
   $a b c + d e + c$,
-  `(add (mul (mul a b) c) (mul d e) c)`,
+  `(add (mul a b c) (mul d e) c)`,
 
   $2 x y - 3 z$,
-  `(sub (mul (mul 2 x) y) (mul 3 z))`,
+  `(sub (mul 2 x y) (mul 3 z))`,
 
   // Prefix operators and chaining
   $- -a + + -b$,
@@ -85,7 +75,7 @@
   `(add (neg (factorial n)) (factorial m))`,
 
   $a b! c!$,
-  `(mul (mul a (factorial b)) (factorial c))`,
+  `(mul a (factorial b) (factorial c))`,
 
   // Powers and right-associativity
   $a^b^c + d^e$,
@@ -102,7 +92,7 @@
 
   // Fractions
   $ a / b + c / d = e / f $,
-  `(= (add (frac a b) (frac c d)) (frac e f))`,
+  `(eq (add (frac a b) (frac c d)) (frac e f))`,
 
   $ (a + b) / (c - d) $,
   `(frac (add a b) (sub c d))`,
@@ -115,14 +105,14 @@
   `(add (times a (mul b c)) (dot d (mul e f)))`,
 
   $a dot b + c times d = e f$,
-  `(= (add (dot a b) (times c d)) (mul e f))`,
+  `(eq (add (dot a b) (times c d)) (mul e f))`,
 
   // Equality at lowest precedence
   $a + b times c = d e - f$,
-  `(= (add a (times b c)) (sub (mul d e) f))`,
+  `(eq (add a (times b c)) (sub (mul d e) f))`,
 
   $a^2 = b^2 + c^2$,
-  `(= (pow a 2) (add (pow b 2) (pow c 2)))`,
+  `(eq (pow a 2) (add (pow b 2) (pow c 2)))`,
 
   // Grouping and nested parentheses
   $((a + b)) times ((c - d))$,
@@ -133,13 +123,13 @@
 
   // Classic formulas
   $a^2 + 2 a b + b^2$,
-  `(add (pow a 2) (mul (mul 2 a) b) (pow b 2))`,
+  `(add (pow a 2) (mul 2 a b) (pow b 2))`,
 
   $(a + b)(a - b) = a^2 - b^2$,
-  `(= (mul (group (add a b)) (group (sub a b))) (sub (pow a 2) (pow b 2)))`,
+  `(eq (mul (group (add a b)) (group (sub a b))) (sub (pow a 2) (pow b 2)))`,
 
   $-b + (b^2 - 4 a c)^(1/2)$,
-  `(add (neg b) (pow (group (sub (pow b 2) (mul (mul 4 a) c))) (frac 1 2)))`,
+  `(add (neg b) (pow (group (sub (pow b 2) (mul 4 a c))) (frac 1 2)))`,
 
   $ n! / (k! (n - k)!) $,
   `(frac (factorial n) (mul (factorial k) (factorial (group (sub n k)))))`,
@@ -151,8 +141,14 @@
   `(sub (add a (mul b c)) (pow (group (neg (mul 2 k))) (frac 1 2)))`,
 
   $sin(- omega t) log(z)$,
-  `(mul (op-call sin (neg (mul ω t))) (op-call log z))`,
+  `(mul (call sin (neg (mul ω t))) (call log z))`,
 
   $sqrt(a + b) + root(n, A)$,
-  `(add (root (add a b)) (root n A))`,
+  `(add (sqrt (add a b)) (root n A))`,
+
+  $binom(n, k, 2) (-1)^k$,
+  `(mul (binom n k) (pow (group (neg 1)) k))`,
+
+  $sqrt(x^2) = root(3, x^3) = x$,
+  `(eq (eq (sqrt (pow x 2)) (root 3 (pow x 3))) x)`
 )
