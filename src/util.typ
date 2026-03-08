@@ -93,8 +93,8 @@
 })
 
 #let stringify(it) = {
-  if type(it) == str { return it }
-  if "text" in it.fields() {
+  if type(it) == str { it }
+  else if type(it) == content and "text" in it.fields() {
     stringify(it.text)
   } else {
     repr(it)
