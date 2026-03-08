@@ -45,7 +45,11 @@
           op.insert("assoc", spec.remove("assoc", default: alignment.left))
         }
       }
-      
+
+      if "rewrite" in spec {
+        op.insert("rewrite", spec.remove("rewrite"))
+      }
+
       return (op, tokens)
     }
 
@@ -114,6 +118,12 @@
     (op, tokens)
   }
 
+  let make-node(op, args: ()) = {
+    let node = (head: op.name, args: args, slots: op.slots)
+    let rewrite-rule = op.at("rewrite", default: it => it)
+    rewrite-rule(node)
+  }
+
 
   let left = none
   let (op, tokens) = parse-op(tokens, ctx: (left: left))
@@ -128,12 +138,12 @@
     let _ = tokens
 
   } else if op.kind == "match" {
-    left = (head: op.name, args: (), slots: op.slots)
+    left = make-node(op, args: ())
   
   // prefix
   } else if op.kind == "prefix" {
     let (tree: right, rest) = parse(tokens, grammar, min-prec: op.prec)
-    left = (head: op.name, args: (right,), slots: op.slots)
+    left = make-node(op, args: (right,))
     tokens = as-array(rest) // consumed op + right
   }
 
@@ -153,7 +163,7 @@
     
     if op.kind == "postfix" {
       if op.prec < min-prec { break }
-      left = (head: op.name, args: (left,), slots: op.slots)
+      left = make-node(op, args: (left,))
 
       tokens = subtokens // consumed op
       continue
@@ -169,7 +179,7 @@
       let assoc = op.at("assoc", default: alignment.left)
       if assoc == true {
         // n-ary
-        left = (head: op.name, args: (left,), slots: op.slots)
+        left = make-node(op, args: (left,))
         let abort = false
         while true {
           let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1e-3)
@@ -198,7 +208,7 @@
         // don't allow rhs of operator to be none
         if right == none { break }
 
-        left = (head: op.name, args: (left, right), slots: op.slots)
+        left = make-node(op, args: (left, right))
 
         tokens = as-array(rest)
         continue
