@@ -12,7 +12,9 @@
 // pattern matching with capture groups.
 // For example, $sum_(#var = #lo)^#hi$ may be parsed as a
 // prefix operator with "slots" (capture groups) for the
-// summation variable and limits.
+// summation variable and limits. The entire pattern is
+// treated as one "token" in and subsequent tokens are
+// consumed as arguments to a prefix operator.
 #let parse(it, grammar, min-prec: -float.inf) = {
 
   let tokens = flatten-sequence(as-array(unwrap(it)))
@@ -24,25 +26,8 @@
 
     // test whether tokens possibly begin with given operator
     let match-op(spec, tokens) = {
-      if type(spec) == function {
-        let fn = spec
-        let m = match-sequence((fn,), tokens, match: match)
-        if m == false { return false }
-        let (slots, tokens) = m
-
-        let args = util.element-fields-to-arguments(fn, slots)
-
-        let op = (
-          kind: function,
-          fn: spec,
-          args: args.pos(),
-          slots: args.named(),
-        )
-        return (op, tokens)
-      }
-
-      let (kind, pattern) = spec.pairs().first()
-      let pattern = as-array(unwrap(pattern))
+      let kind = spec.keys().first()
+      let pattern = as-array(unwrap(spec.remove(kind)))
 
       // disallow leading with infix/postfix
       if ctx.at("left", default: none) == none {
@@ -52,12 +37,15 @@
       let m = match-sequence(pattern, tokens, match: match)
       if m == false { return false }
       let (slots, tokens) = m
-      let op = (
-        kind: kind,
-        ..if kind != "match" { (prec: spec.at("prec", default: 0)) },
-        ..if kind == "infix" { (assoc: spec.at("assoc", default: alignment.left)) },
-        slots: slots,
-      )
+      let op = (kind: kind, slots: slots)
+      
+      if kind in ("prefix", "infix", "postfix") {
+        op.insert("prec", spec.remove("prec", default: 0))
+        if kind == "infix" {
+          op.insert("assoc", spec.remove("assoc", default: alignment.left))
+        }
+      }
+      
       return (op, tokens)
     }
 
