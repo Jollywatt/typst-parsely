@@ -141,7 +141,7 @@
   `(sub (add a (mul b c)) (pow (group (neg (mul 2 k))) (frac 1 2)))`,
 
   $sin(- omega t) log(z)$,
-  `(mul (call sin (neg (mul ω t))) (call log z))`,
+  `(mul (call (sin) (neg (mul ω t))) (call (log) z))`,
 
   $sqrt(a + b) + root(n, A)$,
   `(add (sqrt (add a b)) (root n A))`,
