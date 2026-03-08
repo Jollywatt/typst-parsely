@@ -83,36 +83,6 @@
       let it = tokens.first()
     }
 
-    // try to parse pattern slots
-    if op != none {
-      for (key, slot) in op.slots {
-        if type(slot) != content { continue }
-
-        // danger of infinite recursion
-        // do not parse a slot's content if it is the same as the content that
-        // gave rise to this slot in the first place
-        let m = match-sequence(slot, old-tokens, match: match)
-        // panic(old-tokens, slot, m)
-        if m != false { continue }
-
-        let (tree, rest) = parse(slot, grammar, min-prec: -float.inf)
-        // if the whole slot doesn't parse to the end, keep unparsed
-        if rest != none { continue }
-        op.slots.at(key) = tree
-      }
-
-      // sometimes slots are stored as positional arguments
-      // e.g., for some content functions
-      if "args" in op {
-        for (i, arg) in op.args.enumerate() {
-          if type(arg) != content { continue }
-          let (tree, rest) = parse(arg, grammar, min-prec: -float.inf)
-          // if the whole arg doesn't parse to the end, keep unparsed
-          if rest != none { continue }
-          op.args.at(i) = tree
-        }
-      }
-    }
 
 
     (op, tokens)
@@ -121,7 +91,39 @@
   let make-node(op, args: ()) = {
     let node = (head: op.name, args: args, slots: op.slots)
     let rewrite-rule = op.at("rewrite", default: it => it)
-    rewrite-rule(node)
+    node = rewrite-rule(node)
+    // try to parse pattern slots
+
+    for (key, slot) in node.slots {
+      if type(slot) != content { continue }
+
+      // // danger of infinite recursion
+      // // do not parse a slot's content if it is the same as the content that
+      // // gave rise to this slot in the first place
+      // let m = match-sequence(slot, old-tokens, match: match)
+      // // panic(old-tokens, slot, m)
+      // if m != false { continue }
+
+      let (tree, rest) = parse(slot, grammar, min-prec: -float.inf)
+      // if the whole slot doesn't parse to the end, keep unparsed
+      if rest != none { continue }
+      node.slots.at(key) = tree
+    }
+
+    // sometimes slots are stored as positional arguments
+    // e.g., for some content functions
+    if "args" in node {
+      for (i, arg) in node.args.enumerate() {
+        if type(arg) != content { continue }
+        let (tree, rest) = parse(arg, grammar, min-prec: -float.inf)
+        // if the whole arg doesn't parse to the end, keep unparsed
+        if rest != none { continue }
+        node.args.at(i) = tree
+      }
+    }
+
+    node
+
   }
 
 
