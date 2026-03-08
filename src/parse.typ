@@ -77,29 +77,6 @@
       }
 
       let it = tokens.first()
-
-      // recurse into content
-      if type(it) == content and false {
-        let kind = repr(it.func())
-        if kind not in ("symbol", "text") {
-          tokens = tokens.slice(1)
-          let named = it.fields()
-          let pos = ()
-          let arg-kinds = util.content-positional-args.at(kind, default: (positional: ()))
-          for n in arg-kinds.positional {
-            pos.push(named.remove(n))
-          }
-          if "variadic" in arg-kinds {
-            pos += named.remove(arg-kinds.variadic)
-          }
-          op = (
-            name: "content",
-            kind: "match",
-            args: (it.func(), ..pos),
-            slots: named,
-          )
-        }
-      }
     }
 
     // try to parse pattern slots
@@ -149,14 +126,6 @@
       if not util.is-space(left) { break }
     }
     let _ = tokens
-
-  } else if op.kind == function {
-    left = (head: op.name, args: op.args, slots: op.slots)
-    // panic(op)
-
-  } else if op.name == "content" {
-    // parsing doesn't recurse into content args??
-    left = (head: "content", args: op.args, slots: op.slots)
 
   } else if op.kind == "match" {
     left = (head: op.name, args: (), slots: op.slots)

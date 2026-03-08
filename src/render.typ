@@ -2,11 +2,6 @@
 #import "match.typ"
 
 #let render(it, grammar) = {
-  if it.head == "content" {
-    let (fn, ..pos) = it.args
-    return fn(..pos, ..it.slots)
-  }
-  
   let op = grammar.at(it.head)
 
   if type(op) == function {
