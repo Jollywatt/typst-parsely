@@ -30,6 +30,16 @@ EXCLUDED = {
     "prefix-info",
 }
 
+# manual exceptions to the automatically deduced rules
+# TODO: i don't really understand this
+EXCEPTIONS = {
+  "text": {
+    "positional": [
+      "text",
+    ]
+  },
+}
+
 
 def derive_elem_name(struct_name: str) -> str:
     """Convert struct name to element name (remove Elem suffix, CamelCase to kebab-case)."""
@@ -122,6 +132,9 @@ def extract_elem_from_struct(struct_node, elem_attr_node) -> Optional[tuple]:
     
     if elem_name in EXCLUDED:
         return
+    
+    if elem_name in EXCEPTIONS:
+        return (elem_name, EXCEPTIONS[elem_name])
     
     field_list = find_child(struct_node, "field_declaration_list")
     if not field_list:
