@@ -150,5 +150,9 @@
   `(mul (binom n k) (pow (group (neg 1)) k))`,
 
   $sqrt(x^2) = root(3, x^3) = x$,
-  `(eq (eq (sqrt (pow x 2)) (root 3 (pow x 3))) x)`
+  `(eq (eq (sqrt (pow x 2)) (root 3 (pow x 3))) x)`,
+
+  // Rewrite rules
+  $x_i^2$,
+  `(pow attach(base: [x], b: [i]) 2)`,
 )
