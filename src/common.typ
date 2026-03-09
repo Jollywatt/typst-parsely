@@ -26,7 +26,15 @@
   abs: (match: math.abs),
   binom: (match: $binom(slot("n"), slot("k"))$),
 
-  pow: (match: $slot("base")^slot("exp")$),
+  pow: (
+    match: math.attach,
+    guard: slots => "t" in slots,
+    rewrite: ((slots,)) => {
+      let (base, t, ..rest) = slots
+      let base = if rest.len() == 0 { base } else { math.attach(base, ..rest) }
+      (head: "pow", args: (base, t), slots: (:))
+    }
+  ),
 
   root: (match: math.root(slot("index", guard: it => it != none), slot("radicand"))),
   sqrt: (match: $sqrt(slot("radicand"))$),

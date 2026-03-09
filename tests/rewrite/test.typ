@@ -8,7 +8,7 @@
       let (base, t: exp, ..rest) = it.slots
       let base = if rest.len() > 0 { math.attach(base, ..rest) } else { base }
       if exp == none { return base }
-      (head: "pow", args: (), slots: (base: base, exp: exp))
+      (head: "pow", args: (base, exp), slots: (:))
     },
   ),
   group: (match: $(slot("body*"))$, rewrite: it => it.slots.body)
@@ -22,4 +22,7 @@
   }
 )
 
-#render-tree(parse($(x_i)^2$, grammar).tree)
+#assert.eq(
+  parse($(x_i)^2$, grammar).tree,
+  (head: "pow", args: ($x_i$.body, [2]), slots: (:))
+)
