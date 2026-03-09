@@ -93,9 +93,17 @@
   let make-node(op, args: (), old-tokens) = {
     let node = (head: op.name, args: args, slots: op.slots)
     let rewrite-rule = op.at("rewrite", default: it => it)
-    node = rewrite-rule(node)
-    // try to parse pattern slots
 
+    node = rewrite-rule(node)
+    // rewrite rules may return nodes, or more content to be parsed
+    if type(node) == content {
+      panic(node)
+      // let (tree, rest) = parse(node, grammar, min-prec: -float.inf)
+      // return tree
+    }
+
+
+    // try to parse pattern slots
     for (key, slot) in node.slots {
       if type(slot) != content { continue }
 
