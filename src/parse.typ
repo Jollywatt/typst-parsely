@@ -20,7 +20,7 @@
 
     let m = match-sequence(pattern, tokens, match: match)
     if m == false { return false }
-    let (slots, tokens) = m
+    let (slots, tokens-remaining) = m
     let op = (kind: kind, slots: slots)
     
     if kind in ("prefix", "infix", "postfix") {
@@ -34,7 +34,7 @@
       op.insert("rewrite", spec.remove("rewrite"))
     }
 
-    return (op, tokens)
+    return (op, tokens-remaining)
   }
 
   // find all possible operators matching leading tokens
@@ -90,7 +90,7 @@
   let tokens = flatten-sequence(as-array(unwrap(it)))
   if tokens.len() == 0 { return (tree: none, rest: none) }
 
-  let make-node(op, args: ()) = {
+  let make-node(op, args: (), old-tokens) = {
     let node = (head: op.name, args: args, slots: op.slots)
     let rewrite-rule = op.at("rewrite", default: it => it)
     node = rewrite-rule(node)
@@ -99,12 +99,14 @@
     for (key, slot) in node.slots {
       if type(slot) != content { continue }
 
-      // // danger of infinite recursion
-      // // do not parse a slot's content if it is the same as the content that
-      // // gave rise to this slot in the first place
-      // let m = match-sequence(slot, old-tokens, match: match)
-      // // panic(old-tokens, slot, m)
-      // if m != false { continue }
+      // danger of infinite recursion
+      // do not parse a slot's content if it is the same as the content that
+      // gave rise to this slot in the first place
+      let m = match-sequence(slot, old-tokens, match: match)
+      if m != false {
+        let (_, rest) = m
+        if rest.len() == 0 { continue }
+      }
 
       let (tree, rest) = parse(slot, grammar, min-prec: -float.inf)
       // if the whole slot doesn't parse to the end, keep unparsed
@@ -130,7 +132,9 @@
 
 
   let left = none
+  let old-tokens = tokens
   let (op, tokens) = parse-op(tokens, grammar, ctx: (left: left))
+
 
 
   if op == none {
@@ -141,15 +145,14 @@
       (left, ..tokens) = tokens
       if not util.is-space(left) { break }
     }
-    let _ = tokens
 
   } else if op.kind == "match" {
-    left = make-node(op, args: ())
+    left = make-node(op, args: (), old-tokens)
   
   // prefix
   } else if op.kind == "prefix" {
     let (tree: right, rest) = parse(tokens, grammar, min-prec: op.prec)
-    left = make-node(op, args: (right,))
+    left = make-node(op, args: (right,), old-tokens)
     tokens = as-array(rest) // consumed op + right
   }
 
@@ -169,7 +172,7 @@
     
     if op.kind == "postfix" {
       if op.prec < min-prec { break }
-      left = make-node(op, args: (left,))
+      left = make-node(op, args: (left,), old-tokens)
 
       tokens = subtokens // consumed op
       continue
@@ -185,7 +188,7 @@
       let assoc = op.at("assoc", default: alignment.left)
       if assoc == true {
         // n-ary
-        left = make-node(op, args: (left,))
+        left = make-node(op, args: (left,), ())
         let abort = false
         while true {
           let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1e-3)
@@ -214,7 +217,7 @@
         // don't allow rhs of operator to be none
         if right == none { break }
 
-        left = make-node(op, args: (left, right))
+        left = make-node(op, args: (left, right), ())
 
         tokens = as-array(rest)
         continue

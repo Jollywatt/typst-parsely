@@ -200,3 +200,30 @@
     rest: $#[ ]-$.body,
   )
 )
+
+
+
+// danger of recursion
+
+#let grammar = (
+  number: (match: slot("it", guard: regex("^[\d.]+$"))),
+  cmp: (infix: slot("op", any: ($=_slot("annot")$, $<$, $>$))),
+)
+
+#assert.eq(
+  parse($x$, grammar),
+  (
+    tree: $x$.body,
+    rest: none,
+  )
+)
+
+#assert.eq(
+  parse($42$, grammar),
+  (
+    tree: (head: "number", args: (), slots: (it: [42])),
+    rest: none,
+  )
+)
+
+#parse($a > b$, grammar)
