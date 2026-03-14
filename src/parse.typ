@@ -1,6 +1,76 @@
 #import "match.typ": *
 #import "util.typ": *
 
+
+// parse tokens as one of the operators defined in the grammar
+// returning a tuple of the operator and the remaining tokens.
+// if no operator was matched, the operator is `none`
+#let parse-op(tokens, grammar, ctx: (:)) = {
+
+  // test whether tokens possibly begin with given operator
+  // or return false if no match
+  let match-op(spec, tokens) = {
+    let kind = spec.keys().first()
+    let pattern = as-array(unwrap(spec.remove(kind)))
+
+    // disallow leading with infix/postfix
+    if ctx.at("left", default: none) == none {
+      if kind in ("infix", "postfix") { return false }
+    }
+
+    let m = match-sequence(pattern, tokens, match: match)
+    if m == false { return false }
+    let (slots, tokens) = m
+    let op = (kind: kind, slots: slots)
+    
+    if kind in ("prefix", "infix", "postfix") {
+      op.insert("prec", spec.remove("prec", default: 0))
+      if kind == "infix" {
+        op.insert("assoc", spec.remove("assoc", default: alignment.left))
+      }
+    }
+
+    if "rewrite" in spec {
+      op.insert("rewrite", spec.remove("rewrite"))
+    }
+
+    return (op, tokens)
+  }
+
+  // find all possible operators matching leading tokens
+  let matching-ops = ()
+  for (name, spec) in grammar {
+    let m = match-op(spec, tokens)
+    if m == false { continue }
+    let (op, tokens) = m
+    op.name = name        
+    matching-ops.push((op, tokens))
+    break // if selecting first break early
+    // may extend this in future
+  }
+
+  // choose one operator
+  let old-tokens = tokens
+  let (op, tokens) = matching-ops.at(0, default: (none, tokens))
+
+  
+  // if no operators match, interpret tokens as literal
+  if op == none {
+    // drop whitespace
+    while true {
+      if tokens.len() == 0 { return (none, none) }
+      if util.is-space(tokens.first()) {
+        tokens = tokens.slice(1)
+      } else { break }
+    }
+
+    let it = tokens.first()
+  }
+
+  (op, tokens)
+}
+
+
 // This is a Pratt parser
 // which handles prefix, infix and postfix operators
 // of variable precedence using recursive descent.
@@ -19,74 +89,6 @@
 
   let tokens = flatten-sequence(as-array(unwrap(it)))
   if tokens.len() == 0 { return (tree: none, rest: none) }
-
-  // parse tokens as one of the operators defined in the grammar
-  // or return false if no match
-  let parse-op(tokens, ctx: (:)) = {
-
-    // test whether tokens possibly begin with given operator
-    let match-op(spec, tokens) = {
-      let kind = spec.keys().first()
-      let pattern = as-array(unwrap(spec.remove(kind)))
-
-      // disallow leading with infix/postfix
-      if ctx.at("left", default: none) == none {
-        if kind in ("infix", "postfix") { return false }
-      }
-
-      let m = match-sequence(pattern, tokens, match: match)
-      if m == false { return false }
-      let (slots, tokens) = m
-      let op = (kind: kind, slots: slots)
-      
-      if kind in ("prefix", "infix", "postfix") {
-        op.insert("prec", spec.remove("prec", default: 0))
-        if kind == "infix" {
-          op.insert("assoc", spec.remove("assoc", default: alignment.left))
-        }
-      }
-
-      if "rewrite" in spec {
-        op.insert("rewrite", spec.remove("rewrite"))
-      }
-
-      return (op, tokens)
-    }
-
-    // find all possible operators matching leading tokens
-    let matching-ops = ()
-    for (name, spec) in grammar {
-      let m = match-op(spec, tokens)
-      if m == false { continue }
-      let (op, tokens) = m
-      op.name = name        
-      matching-ops.push((op, tokens))
-      break // if selecting first break early
-      // may extend this in future
-    }
-
-    // choose one operator
-    let old-tokens = tokens
-    let (op, tokens) = matching-ops.at(0, default: (none, tokens))
-
-    
-    // if no operators match, interpret tokens as literal
-    if op == none {
-      // drop whitespace
-      while true {
-        if tokens.len() == 0 { return (none, none) }
-        if util.is-space(tokens.first()) {
-          tokens = tokens.slice(1)
-        } else { break }
-      }
-
-      let it = tokens.first()
-    }
-
-
-
-    (op, tokens)
-  }
 
   let make-node(op, args: ()) = {
     let node = (head: op.name, args: args, slots: op.slots)
@@ -128,10 +130,12 @@
 
 
   let left = none
-  let (op, tokens) = parse-op(tokens, ctx: (left: left))
+  let (op, tokens) = parse-op(tokens, grammar, ctx: (left: left))
 
-  // consume literal token
+
   if op == none {
+    // leading token(s) did not match any operator
+    // so we consume as a literal token
     while true {
       if tokens.len() == 0 { return (tree: none, rest: none) }
       (left, ..tokens) = tokens
@@ -160,7 +164,7 @@
     }
     i += 1
 
-    let (op, subtokens) = parse-op(tokens, ctx: (left: left))
+    let (op, subtokens) = parse-op(tokens, grammar, ctx: (left: left))
     if op == none { break }
     
     if op.kind == "postfix" {
@@ -194,7 +198,7 @@
           tokens = rest // consumed op + right
 
           // if followed by same operator, absorb
-          let (next-op, rest) = parse-op(rest, ctx: (left: right))
+          let (next-op, rest) = parse-op(rest, grammar, ctx: (left: right))
           if next-op == none { break }
           if next-op.name != op.name { break }
           if next-op.prec < min-prec { break }
