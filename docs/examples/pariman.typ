@@ -14,12 +14,10 @@ You can parse equations with Parsely and evaluate them with Pariman by writing a
   else if head == "sub" { sub(..args) }
   else if head == "mul" { mul(..args) }
   else if head == "frac" { div(slots.num, slots.denom) }
-  else if head == "pow" { pow(slots.base, slots.exp) }
+  else if head == "pow" { pow(..args) }
   else if head == "group" { slots.expr }
-  else if head == "root" {
-    if "index" in slots { root(slots.radicand, slots.index.value) }
-    else { root(slots.radicand, 2) }
-  }
+  else if head == "sqrt" { root(slots.radicand, 2) }
+  else if head == "root" { root(slots.radicand, slots.index.value) }
   else { panic(head) }
 }
 
