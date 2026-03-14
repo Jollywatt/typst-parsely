@@ -57,6 +57,11 @@
 }
 
 
+/// Tries to make a pattern match a sequence of content by determining
+/// the pattern's slots.
+/// Returns a tuple `(ctx, tokens)` where `ctx` is a dictionary associating
+/// slot names with their matched values, and `tokens` is the trailing content
+/// that was not consumed by the pattern.
 #let match-sequence(pattern, expr, match: none, ctx: (:)) = {
   pattern = tighten(util.as-array(pattern))
 
