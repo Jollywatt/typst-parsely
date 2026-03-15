@@ -123,7 +123,7 @@
       fill: c.transparentize(95%),
       inset: 4pt,
     )
-    $ #render(it, grammar) $
+    $ #render.node(it, grammar) $
   })
 
   let grammar = (
@@ -241,7 +241,7 @@
 + Use `parsely.walk()` or `parsely.render()` to visit nodes and turn them into content.
 
   #example(```typ
-  #parsely.walk(tree, post: node => parsely.render(node, grammar))
+  #parsely.walk(tree, post: node => parsely.render.node(node, grammar))
   ```, scope: (grammar: grammar, tree: tree))
 
   #example(```typ
@@ -255,7 +255,6 @@
     cetz.tree.tree(cetz-tree, grow: 0.2, spread: 0.5)
   })
   ```, scope: (tree: tree, grammar: grammar))
-
 
 #let example-file(path, tint) = {
   show: block.with(
@@ -491,7 +490,7 @@ The default precedence is zero.
     $-X k! Z?$,
   ),
   styler: (tree, grammar) => parsely.walk(tree, post: n => {
-    let it = parsely.render(n, grammar)
+    let it = parsely.render.node(n, grammar)
     let c = hash-color(n.head).darken(10%)
     text(c, $lr((it), size: #115%)$)
 
@@ -538,7 +537,7 @@ Possible values are `left` (default), `right` and `true`, for left/right associa
     $a <==> b <==> c$,
   ),
   styler: (tree, grammar) => parsely.walk(tree, post: n => {
-    let it = parsely.render(n, grammar)
+    let it = parsely.render.node(n, grammar)
     let c = hash-color(n.head).darken(10%)
     text(c, $(it)$)
 

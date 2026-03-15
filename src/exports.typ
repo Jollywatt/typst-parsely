@@ -1,6 +1,6 @@
 #import "parse.typ": parse
 #import "match.typ": match, slot, tight, loose
-#import "render.typ": render, render-spans, render-tree
+#import "render.typ"
 #import "util.typ" as util: walk, node-depths, stringify
 #import "common.typ"
 

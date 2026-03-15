@@ -1,7 +1,7 @@
 #import "util.typ"
 #import "match.typ"
 
-#let render(it, grammar) = {
+#let node(it, grammar) = {
   let op = grammar.at(it.head)
 
   if type(op) == function {
@@ -29,7 +29,7 @@
 }
 
 
-#let render-spans(tree, grammar) = {
+#let spans(tree, grammar) = {
   tree = util.node-depths(tree)
   let max-depth = if type(tree) == dictionary {
     tree.at("depth", default: 0)
@@ -38,7 +38,7 @@
   let out = util.walk(tree, post: it => {
     let color = color.hsl(150deg + 35deg*it.depth, 90%, 45%)
     box(
-      render(it, grammar),
+      node(it, grammar),
       inset: (x: 2pt),
       outset: (x: -1pt, top: gap*it.depth),
       radius: (top: 3pt),
@@ -56,7 +56,7 @@
   pad(out, top: gap*max-depth)
 }
 
-#let render-tree(tree, grow: 2em, spread: 1em, stroke: black) = context {
+#let tree(tree, grow: 2em, spread: 1em, stroke: black) = context {
   set curve(stroke: stroke)
   set curve(stroke: (cap: "round"))
   util.walk(tree,
@@ -96,7 +96,7 @@
           }
           place(top, curve(
             curve.move((total-width/2, head-height + gap)),
-            curve.quad((x, head-height + gap), (x, head-height + grow - gap - shift)),
+            curve.quad((x, head-height + gap + 0.2*grow), (x, head-height + grow - gap - shift)),
           ))
           x += width/2 + spread
         }
