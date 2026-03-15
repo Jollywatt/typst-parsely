@@ -3,24 +3,23 @@
 #let grammar = (
   pow: (
     match: math.attach,
-    guard: it => "t" in it.fields(),
+    guard: slots => "t" in slots,
     rewrite: it => {
-      let (base, ..rest) = it.slots
-      let exp = rest.remove("t", default: none)
+      let (base, t: exp, ..rest) = it.slots
       let base = if rest.len() > 0 { math.attach(base, ..rest) } else { base }
       if exp == none { return base }
       (head: "pow", args: (), slots: (base: base, exp: exp))
     },
   ),
-  group: (match: $(slot("body*"))$)
+  group: (match: $(slot("body*"))$, rewrite: it => it.slots.body)
 )
 
 #assert.eq(
   parse($x_i^2$, grammar).tree,
   {
-    let inner = $x_0$.body
+    let inner = $x_i$.body
     parse($inner^2$, grammar).tree
   }
 )
 
-// #parse($(x_i)^2$, grammar)
+#render-tree(parse($(x_i)^2$, grammar).tree)
