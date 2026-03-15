@@ -125,13 +125,16 @@
   } else {
     let args = element-fields-to-arguments(fn, it.fields())
 
+    // exceptions due to irregularity in typst's content model
+    if head == "root" and args.pos().len() == 1 {
+      fn = math.sqrt
+    }
+
     (
       head: head,
       fn: fn,
       args: args.pos().map(c),
-      slots: args.named().pairs().map(((k, v)) => {
-        (k, c(v))
-      }).to-dict(),
+      slots: args.named().pairs().map(((k, v)) => (k, c(v))).to-dict(),
     )
   }
 }
