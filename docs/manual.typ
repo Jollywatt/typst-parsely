@@ -187,7 +187,7 @@
 
 #align(center, cover-graphic)
 
-#context outline(target: selector(heading).after(here()))
+#context outline(target: selector(heading).after(here()).before(<func-ref>))
 
 
 #pagebreak()
@@ -632,3 +632,25 @@ caption: [Traversing the syntax tree from @example-tree to output a string.]) <e
 Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
 
 See the source code of the @examples for many different examples of syntax tree manipulations with tree walks.
+
+
+
+#pagebreak()
+
+= Function reference <func-ref>
+
+== ```typc parsely.util```
+
+#set heading(numbering: none)
+#show heading.where(level: 3): it => heading(raw(it.body.text + "()"), level: 2)
+
+#tidy.show-module(
+  tidy.parse-module(read("../src/util.typ")),
+  style: dictionary(tidy.styles.default) + (
+    show-outline: (module-doc, style-args: (:)) => {
+      for fn in module-doc.functions [
+        - #link(str(module-doc.label-prefix + fn.name), raw(fn.name + "()"))
+      ]
+    }
+  )
+)
