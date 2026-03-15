@@ -45,12 +45,20 @@
 
 #let ELEMENT_ARGS = json("element-args.json")
 
-/// Construct an element given the content function and a dictionary of fields.
+/// Convert an element's fields into an `arguments` object that can be passed to the element function to reinstantiate it as content.
+/// 
+/// This works for _almost_ all elements:
+/// 
+/// ```typc
+/// let it = /* some content */
+/// let (fn, fields) = (it.func(), it.fields())
+/// assert.eq(it, fn(..element-fields-to-arguments(fn, fields)))
+/// ```
 /// 
 /// Some content functions require some fields to be given as positional or variadic arguments.
-/// This function takes care of those, providing a uniform interface for constructing elements.
+/// This function takes care of all this irregularity, providing an easier way to produce elements from field dictionaries.
 /// 
-/// The field dictionary should be in the same order as given when calling `element.fields()`.
+/// However, there are still some elements (like `sequence` and `math.sqrt`) which need special treatment, as done by @content-to-tree.
 #let element-fields-to-arguments(fn, fields) = {
   let arg-types = ELEMENT_ARGS.at(repr(fn), default: (:))
 
@@ -107,6 +115,8 @@
 /// (head: "element-name", fn: <element-fn>, args: <positional-args>, slots: <named-args>)
 /// ```
 /// The content element may be reconstructed from the node by calling `fn(..args, ..slots)`, provided its arguments and slots have also been converted from nodes into content.
+/// 
+/// See also @tree-to-content.
 #let content-to-tree(it, exclude: ()) = {
   if type(it) != content { return it }
 
@@ -141,4 +151,7 @@
   }
 }
 
+
+/// Reconstruct content from a tree in the format given by @content-to-tree.
+/// This simply performs a post-walk transforming nodes of the form `(head, fn, args, slots)` into `fn(..args, ..slots)`.
 #let tree-to-content(tree) = walk(tree, post: ((fn, args, slots)) => fn(..args, ..slots))
