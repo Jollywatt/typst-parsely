@@ -109,6 +109,8 @@
 /// The content element may be reconstructed from the node by calling `fn(..args, ..slots)`, provided its arguments and slots have also been converted from nodes into content.
 #let content-to-tree(it, exclude: ()) = {
   if type(it) != content { return it }
+
+  if type(exclude) != array { exclude = (exclude,) }
   let c = content-to-tree.with(exclude: exclude)
 
   let fn = it.func()
