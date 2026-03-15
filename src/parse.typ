@@ -34,6 +34,10 @@
       op.insert("rewrite", spec.remove("rewrite"))
     }
 
+    if "guard" in spec {
+      if not (spec.guard)(slots) { return false }
+    }
+
     return (op, tokens-remaining)
   }
 
@@ -97,9 +101,9 @@
     node = rewrite-rule(node)
     // rewrite rules may return nodes, or more content to be parsed
     if type(node) == content {
-      panic(node)
-      // let (tree, rest) = parse(node, grammar, min-prec: -float.inf)
-      // return tree
+      // panic(node)
+      let (tree, rest) = parse(node, grammar, min-prec: -float.inf)
+      return tree
     }
 
 
