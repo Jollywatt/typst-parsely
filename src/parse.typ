@@ -89,6 +89,19 @@
 // summation variable and limits. The entire pattern is
 // treated as one "token" in and subsequent tokens are
 // consumed as arguments to a prefix operator.
+
+/// Parse content into a tree according to a specified grammar, returning a dictionary `(tree, rest)` with the parsed syntax tree and any trailing content that failed to parse.
+/// 
+/// ```example
+/// let (tree, rest) = parsely.parse($f(x) = x^2/2$, parsely.common.arithmetic)
+/// ```
+/// 
+/// Not all content in the syntax tree needs to be parsed; content that fails to be parsed is left as is, which may result in a "partially parsed" syntax tree with content in some nodes.
+/// 
+/// When is called on some content, the parser tries to match the content with operators defined in the grammar.
+/// If successful, the parser recursively descends into arguments and tries to parse those.
+/// If parsing slot arguments fails, the slot is simply left as content in the resulting syntax tree.
+/// If parsing a positional argument fails, what was parsed so far is returned in `tree` and remaining content is returned in `rest`.
 #let parse(it, grammar, min-prec: -float.inf) = {
 
   let tokens = flatten-sequence(as-array(unwrap(it)))
@@ -100,6 +113,7 @@
 
     node = rewrite-rule(node)
     // rewrite rules may return nodes, or more content to be parsed
+    
     if type(node) == content {
       // panic(node)
       let (tree, rest) = parse(node, grammar, min-prec: -float.inf)
