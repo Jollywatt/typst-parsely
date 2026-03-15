@@ -245,15 +245,7 @@
   ```, scope: (grammar: grammar, tree: tree))
 
   #example(```typ
-  #import "@preview/cetz:0.4.2"
-  #cetz.canvas({
-    let cetz-tree = parsely.walk(tree, // convert nodes to nested arrays
-      post: it => (strong(it.head), ..it.args, ..it.slots.values()),
-      leaf: it => $(it)$
-    )
-    cetz.draw.set-style(content: (padding: 3pt))
-    cetz.tree.tree(cetz-tree, grow: 0.2, spread: 0.5)
-  })
+  #parsely.render.tree(tree)
   ```, scope: (tree: tree, grammar: grammar))
 
 #let example-file(path, tint) = {

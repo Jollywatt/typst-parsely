@@ -56,7 +56,7 @@
   pad(out, top: gap*max-depth)
 }
 
-#let tree(tree, grow: 2em, spread: 1em, stroke: black) = context {
+#let tree(tree, grow: 2.5em, spread: 1.5em, stroke: black) = context {
   set curve(stroke: stroke)
   set curve(stroke: (cap: "round"))
   util.walk(tree,
@@ -67,12 +67,12 @@
     post: ((head, args, slots)) => {
       let children = args + slots.values()
       let widths = children.map(it => measure(it).width)
-      let head = align(center, text(0.8em, strong(raw(head))))
+      let head = align(center, text(0.9em, strong(raw(head))))
       if children.len() == 0 { return head }
 
       let head-height = measure(head).height
       let total-width = (widths.sum(default: 0pt) + (children.len() - 1)*spread).to-absolute()
-      let gap = grow*0.1
+      let gap = grow*0.15
 
       box(width: calc.max(total-width, measure(head).width), align(center, box(width: total-width, {
         grid(
@@ -89,7 +89,7 @@
           x += width/2
           let shift = 0pt
           if name != none {
-            let name = text(0.6em, std.stroke(stroke).paint, raw(name))
+            let name = text(0.7em, std.stroke(stroke).paint, raw(name))
             let (width, height) = measure(name)
             shift = height + gap
             place(top, dx: x - width/2, dy: head-height + grow - gap - height, name)
