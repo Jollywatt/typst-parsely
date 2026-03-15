@@ -10,8 +10,11 @@
 #set page(margin: (x: 25mm, y: 20mm))
 #set heading(numbering: "1.", supplement: none)
 #show heading: it => v(1em) + text(1.2em, it) + v(1em, weak: true)
+
 #set text(font: "Fira Sans")
-#show raw: set text(1.1em, font: "Fira Code", weight: 500)
+#show raw: set text(1.2em, font: "Fira Code", weight: 500)
+#set raw(lang: "typc")
+
 #show link: it => underline(it)
 #show figure: set align(left)
 #show figure.caption: set text(0.8em)
@@ -27,8 +30,14 @@
 
 
 #let code-fill = oklab(98.17%, -0.005, -0.007)
-#let frame = box.with(width: 100%, inset: 8pt, stroke: code-fill.darken(30%))
-#show raw.where(block: true): frame.with(fill: code-fill)
+#let frame(..args) = {
+  set par(justify: false)
+  set text(0.93em)
+  box(width: 100%, inset: 8pt, stroke: code-fill.darken(30%), ..args)
+}
+#show raw.where(block: true): it => {
+  frame(it, fill: code-fill)
+}
 
 #let example(code, scope: (:)) = {
   code = code.text
@@ -82,17 +91,22 @@
     frame(fill: code-fill, {
       let lines = grammar-block.text.split("\n")
       let it = for l in lines {
-        let i = l.position(":")
-        let key = l.slice(0, i)
-        text(hash-color(key), raw(key)) + raw(l.slice(i)) + "\n"
+        if l.match(regex("^\w+:")) == none { raw(l + "\n") }
+        else {
+          let i = l.position(":")
+          let key = l.slice(0, i)
+          text(hash-color(key), raw(key)) + raw(l.slice(i)) + "\n"
+        }
       }
       emph[Operators in grammar] 
       par(it)
     }),
     frame({
       emph[Parsing examples] + v(-1em)
+      set text(1.1em)
+      set align(center)
       grid(
-        columns: (2fr, auto, 3fr),
+        columns: (auto, auto, auto),
         align: (right + bottom, center + bottom, left),
         inset: 5pt,
         ..eqns.map(eqn => {
@@ -138,36 +152,50 @@
 
   let eq = $exp(x) = sum_(k = 0)^oo 1/k! x^k$
   let (tree, rest) = parse(eq, grammar)
+
+  let array-tree = util.walk(tree, post: it => {
+    let args = {
+      if it.head == "sum" {
+        (it.slots.var, it.slots.start, it.slots.stop) // custom order
+      } else {
+        it.slots.values()
+      }
+      it.args
+    }
+    (head: it.head, args: args, slots: (:))
+  }, leaf: math.equation)
   
-  let sep = text(20pt, $ arrow.t.b $)
-  stack(
-    spacing: 10pt,
-    box(text(15pt, regions(tree, grammar))),
-    sep,
-    util.walk(tree, post: it => {
+  
+  let lisp-figure = util.walk(array-tree, post: it => {
       set text(14pt)
       let c = hash-color(it.head)
       text(c, strong[#it.head])
       text(c)[(]
-      {
-        if it.head == "sum" {
-          (it.slots.var, it.slots.start, it.slots.stop) // custom order
-        } else {
-          it.at("slots", default: (:)).values()
-        }
-        it.at("args", default: ())
-      }.join(text(c)[, ])
+      it.args.join(text(c)[, ])
       text(c)[)]
-    }, leaf: it => $it$),
-    sep,
-    move(dx: 0.5em, text(12pt, cetz.canvas({
+    })
+
+  let tree-figure = {
+    set text(12pt)
+    cetz.canvas({
       let a = util.walk(tree, post: it => {
         let c = hash-color(it.head)
         (text(c, strong(it.head)), ..it.args, ..it.slots.values())
-      }, leaf: it => $it$)
-      cetz.draw.set-style(content: (padding: .1))
-      cetz.tree.tree(a, grow: 0.4, spread: 0)
-    }))),
+      })
+      cetz.draw.set-style(content: (padding: .15))
+      cetz.tree.tree(a, grow: 0.55, spread: 0.15)
+    })
+  }
+
+
+  let sep = text(20pt, $ arrow.t.b $)
+  stack(
+    spacing: 1.5em,
+    box(text(17pt, regions(tree, grammar))),
+    sep,
+    lisp-figure,
+    sep,
+    move(dx: .9em, tree-figure),
   )
 }
 
@@ -184,18 +212,24 @@
 
 
 #v(1fr)
-
 #align(center, cover-graphic)
+#v(1fr)
 
-#context outline(target: selector(heading).after(here()).before(<func-ref>))
+#context align(right, block(width: 50%, outline(depth: 1, title: none)))
+
+#pagebreak()
+#heading(numbering: none)[Contents]
+#show outline.entry.where(level: 1): it => v(1em) + it
+#context outline(target: selector(heading).after(here()), title: none)
 
 
 #pagebreak()
+#set page(numbering: "1")
+
 
 
 = At a glance
 
-#set raw(lang: "typc")
 
 + Import the package with:
 
@@ -241,12 +275,13 @@
 + Use `parsely.walk()` or `parsely.render()` to visit nodes and turn them into content.
 
   #example(```typ
-  #parsely.walk(tree, post: node => parsely.render.node(node, grammar))
-  ```, scope: (grammar: grammar, tree: tree))
-
-  #example(```typ
   #parsely.render.tree(tree)
   ```, scope: (tree: tree, grammar: grammar))
+
+  #example(```typ
+  #parsely.walk(tree, post: n => parsely.render.node(n, grammar))
+  ```, scope: (grammar: grammar, tree: tree))
+
 
 #let example-file(path, tint) = {
   show: block.with(
@@ -327,7 +362,7 @@ There are four kinds of operators: `prefix`, `infix`, `postfix` and `match`.
 #figure(table(
   inset: (left: 0pt, rest: 8pt),
   align: left,
-  stroke: (none),
+  stroke: none,
   columns: (auto, ..(1fr,)*4),
 
   [Operator type], [Prefix], [Infix], [Postfix], [Match],
@@ -338,7 +373,7 @@ There are four kinds of operators: `prefix`, `infix`, `postfix` and `match`.
   [Associativity, `assoc`], na, [left/right/both], na, na,
 ), caption: [
   Kinds of operators available when declaring grammars and their features.
-]) <op-table>
+]) <op-kinds-table>
 ]
 
 
@@ -346,6 +381,44 @@ Prefix, infix and postfix operators consume tokens around them as _positional ar
 Match operators do not consume tokens to the left or right, but simply match a pattern.
 All operators support @slots, possibly consuming tokens as _slot arguments_.
 
+
+
+
+=== Other operator fields
+
+In addition to its kind and pattern, an operator can have any of the keys in @op-table.
+
+#[
+#let na = text(gray)[not applicable]
+#figure(table(
+  columns: (auto, 1fr),
+  stroke: none,
+  [Operator key], [Description],
+  table.hline(),
+
+  [(@op-kinds[kind])],
+  // [content or @slots[pattern]],
+  [For example, the operator `(infix: $+$, ..)` has the @op-kinds[kind] "`infix`" and the @slots[pattern] `$+$`. This must be first entry in the operator dictionary.],
+
+  `prec`,
+  // `number`,
+  [The @prec level. Has no effect for `match` operators.],
+
+  `assoc`,
+  // [`left`/`right`/`true`],
+  [@assoc[Associativity] for infix operators, ignored for other kinds.],
+
+  `guard`,
+  [A @op-guard[predicate function] to allow matching nodes conditionally depending on the values of slots. Must be a boolean function accepting a dicionary.],
+
+  `rewrite`,
+  [A @rewrite[rewrite rule] or function which takes the node which would be produced and transforms it before parsing continues.],
+
+  [(others)], [Any other fields are allowed and ignored.]
+), caption: [
+  Meanings of entries of an operator dictionary.
+]) <op-table>
+]
 
 
 == Pattern matching and slots <slots>
@@ -364,16 +437,21 @@ Patterns can be:
 Pattern matching is done by the function `parsely.match(pattern, expr)`, which returns a dictionary if the match is successful and `false` otherwise.
 #example(```typ
 #import parsely: slot
-#parsely.match($1 + slot("rhs")$, $1 + x^2$) \
-#parsely.match($A B C$, $A B Omega$) \
-#parsely.match(math.frac, $1/2$) \ // same as $slot("num")/slot("denom")$
+- #parsely.match($1 + slot("rhs")$, $1 + x^2$)
+- #parsely.match($A B C$, $A B Omega$)
+- #parsely.match(math.frac, $1/2$) // or $slot("num")/slot("denom")$
 ```)
 
 Slots are wildcard tokens that match content in several ways:
+
 - `slot(name)` matches any single token.
+
 - `slot(name, many: true, greedy: bool)` @slot-many[matches any sequence].
+
 - `slot(name, any: array)` @slot-any[matches any one of a set of patterns].
+
 - `slot(name, guard: function)` @slot-guard[matches a token conditionally].
+
 - The special patterns `parsely.tight` and `parsely.loose` allow @tight-loose[matching whitespace].
 
 === Matching sequences greedily or lazily <slot-many>
@@ -381,16 +459,16 @@ Slots are wildcard tokens that match content in several ways:
 A slot such as `slot("rhs")` will match a single token, but *multiple tokens* can be matched with `slot("rhs", many: true)` or `slot("rhs*")` for short.
 
 #example(```typ
-#parsely.match($1; 2; slot("etc")$,  $1; 2; 3; 4$) \ // single token slot
-#parsely.match($1; 2; slot("etc*")$, $1; 2; 3; 4$)   // multi token slot
+#parsely.match($1; 2; slot("etc")$,  $1; 2; 3; 4$) // single token slot
+#parsely.match($1; 2; slot("etc*")$, $1; 2; 3; 4$) // multi token slot
 ```)
 
 By default, multi-token slots are *greedy*, preferring to match more tokens when there is choice.
 Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?")` for short match as few tokens as possible.
 
 #example(```typ
-#parsely.match($slot("greedy*"), slot("rest*")$, $alpha, beta, gamma$) \
-#parsely.match($slot("lazy*?"),  slot("rest*")$, $alpha, beta, gamma$)
+- #parsely.match($slot("greedy*"), slot("rest*")$, $alpha, beta, gamma$)
+- #parsely.match($slot("lazy*?"),  slot("rest*")$, $alpha, beta, gamma$)
 ```)
 
 === Matching any pattern in a union <slot-any>
@@ -538,12 +616,59 @@ Possible values are `left` (default), `right` and `true`, for left/right associa
 
 
 
+== How trees are represented <trees>
+
+Everywhere in this manual, a "tree" or "node" refers to a dictionary of the form
+```
+(head: str, args: array, slots: dictionary)
+```
+where "`head`" is name of the node, and the node's children are the elements of "`args`" or the values of "`slots`".
+Both `args` and `slots` always be present, even if they are empty.
+
+Nodes in a tree are often represented in the simpler array form `(head, ..children)`.
+However, having both kinds of children makes it easier to represent
+- operators with both positional arguments and named slots; and
+- element functions associated with positional and named arguments.
+
+
+=== Tree traversal
+
+You can do many things with a syntax tree with @walk.
+For example, @example-walk implements a post-walk which transforms leaf nodes (the symbols $a$, $b$ and $2$) into `"{a}"`, `"{b}"`, `"{2}"` and then converts operator into strings with custom rules.
+#figure(example(```typ
+#let tree = parsely.parse($sqrt(a + b^2)$, parsely.common.arithmetic).tree
+#parsely.walk(tree, post: node => {
+  let (head, args, slots) = node
+  if head == "add" { args.join(" + ") }
+  else if head == "pow" { args.join("^") }
+  else if head == "sqrt" { "√(" + slots.radicand + ")" }
+  else { repr(node) } // a fallback representation
+}, leaf: it => "{" + it + "}")
+```, scope: (grammar: grammar)),
+caption: [Traversing the syntax tree to output a string.]) <example-walk>
+
+Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
+
+See the source code of the @examples for many different examples of syntax tree manipulations with tree walks.
 
 
 
 
 
-== Parsing juxtaposition as an operator <juxt>
+
+
+
+== Operator rewriting and operator guards
+
+
+=== Operator predicates <op-guard>
+
+=== Rewrite rules <rewrite>
+
+
+== Gotchas
+
+=== Parsing juxtaposition as an operator <juxt>
 
 It is common to want to parse sequences of consecutive non-operator tokens.
 The default behaviour is to stop parsing when a token is encountered that is not the argument or slot of an operator.
@@ -580,49 +705,59 @@ grp: (match: $(slot("body*"))$), // "juxt" must be before this
 ]) <example-juxt>
 
 
-== Parsing and syntax trees
-
-Parsing content with respect to a grammar is the process of transforming the content into a _syntax tree_.
-The main function `parsely.parse(expr, grammar)` returns a dictionary containing `tree` and `rest`.
-The tree is composed of nodes with two kinds of children: _positional_ arguments and _slot_ arguments.
-Each node is a dictionary of the form
-```
-(head: str, args: array, slots: dictionary)
-```
-where "`head`" is the operator name that was matched at that point in the expression.
-The positional arguments in "`args`" is an array of positional arguments, holding the left and right sides of unary or binary operators, while "`slot`" arguments hold the matched values of slots in patterns.
-Associative operators may have more than two positional arguments.
-
-For example, using the simple grammar defined in @example-grammar:
-
-#figure(example(```typ
-#parsely.parse($a + b^2 + c$, grammar).tree
-```, scope: (grammar: grammar)), caption: [A parsed syntax tree with two operator nodes defined in @example-grammar and three leaf nodes.]) <example-tree>
-#highlight[Not all content has to be parsed.]
-When `parsely.parse()` is called on some content, it tries to match the content with operators defined in the grammar.
-If successful, the parser recursively descends into arguments and tries to parse those.
-If parsing slot arguments fails, the slot is simply left as content in the resulting syntax tree.
-If parsing a positional argument fails, what was parsed so far is returned in `tree` and remaining content is returned in `rest`.
 
 
-=== Tree traversal
 
-You can do many things with a syntax tree by performing a _post-order tree walk_.
+=== Parsing exponents and subscripts
 
-For example, @example-walk implements a post-walk which transforms leaf nodes (the symbols $a$, $b$ and $2$) into `"{a}"`, `"{b}"`, `"{2}"` and then converts operators nodes (`add` and `pow`) into strings custom rules.
-#figure(example(```typ
-#parsely.walk(tree, post: node => {
-  let (head, args, slots) = node
-  if head == "add" { args.join(" + ") }
-  else if head == "pow" { slots.base + "^" + slots.exp }
-  else { repr(node) } // a fallback string representation
-}, leaf: it => "{" + it + "}")
-```, scope: (tree: parsely.parse($a + b^2$, grammar).tree)),
-caption: [Traversing the syntax tree from @example-tree to output a string.]) <example-walk>
+Because Typst content is itself a tree-like structure, some content cannot be parsed in the same way that a string of tokens would be.
+For instance, the body of the equation `$x_i^2$` is a single `math.attach` element containing both the superscript and subscript as fields:
+#example(```typ
+#let tree = parsely.util.content-to-tree($x_i^2$.body)
+#parsely.render.tree(tree)
+```)
+In fact, `$x_i^2$` and `$x^2_i$` are indistinguishable.
+This makes parsing `$x_i^2$` as $(x_i)^2$ as opposed to $(x^2)_i$ slightly tricky, for example.
 
-Similar post-order tree walks can be used to rewrite nodes, reorder arguments, evaluate expressions numerically, or return content with certain styles or annotations added to specific nodes.
+To illustrate what why this is an issue, the grammar in @example-pow-bad naively matches `math.attach` elements, but silently drops other fields such as subscripts, so $x_i^2$ becomes $x^2$.
+#grammar-examples(```
+pow: (match: $slot("base")^slot("exp")$) // don't do this
+```, (
+  $x_i^2$,
+), caption: [A limitation of slot-based pattern matching. #highlight[Notice the subscript gets dropped.]]) <example-pow-bad>
 
-See the source code of the @examples for many different examples of syntax tree manipulations with tree walks.
+The trick is to use an operator `rewrite` rule, which lets us manipulate the node however we want as soon as the parser encounters content matching the operator's pattern.
+A rewrite rule is a function which accepts the node (as it would be parsed) and outputs content or another node which the parser will continue to descend into.
+
+The `pow` operator in @example-pow-good matches `math.attach` elements, and uses a `rewrite` rule to ensure that non-superscript attachments are added to the base before parsing continues.
+
+#grammar-examples(```
+group: (match: $(slot("body*"))$),
+add: (infix: $+$),
+pow: (
+  match: math.attach,
+  guard: slots => "t" in slots, // required to avoid infinite recursion
+  rewrite: it => {
+    let (base, t, ..rest) = it.slots
+    if rest.len() > 0 { base = math.attach(base, ..rest) }
+    (head: "pow", args: (base, t), slots: (:))
+  }),
+```, (
+  `$x_i^2$`,
+  `$x^2_i$`,
+  `$x_0$`,
+  `$(x^i + y_j)^(p + q)$`,
+), caption: [
+  A correct way of parsing superscripts while preserving other attachments such as subscripts.
+]) <example-pow-good>
+
+Rewrite rules can be dangerous in the same sense as a tree pre-walk: it can result in infinite recursion if the output of the rewrite rule is matched by the same operator.
+
+To guard against this, we must use the @op-guard[operator guard]
+`slots => "t" in slots`
+which ensures that `pow` only applies to `math.attach` elements which have a superscript (and possibly other fields).
+
+
 
 
 
@@ -630,18 +765,54 @@ See the source code of the @examples for many different examples of syntax tree 
 
 = Function reference <func-ref>
 
-== ```typc parsely.util```
-
 #set heading(numbering: none)
-#show heading.where(level: 3): it => heading(raw(it.body.text + "()"), level: 2)
 
-#tidy.show-module(
-  tidy.parse-module(read("../src/util.typ")),
-  style: dictionary(tidy.styles.default) + (
-    show-outline: (module-doc, style-args: (:)) => {
-      for fn in module-doc.functions [
-        - #link(str(module-doc.label-prefix + fn.name), raw(fn.name + "()"))
-      ]
-    }
-  )
-)
+
+#let show-function(fn, module) = [
+
+  === #raw({
+    module
+    fn.name
+    "("
+    fn.args.keys().join(", ")
+    ")"
+  })
+  #label(fn.name)
+
+  #for (arg, (description,)) in fn.args [
+    #if description == "" { continue }
+    - #strong(raw(arg + ":")) #eval(description, mode: "markup")
+  ]
+
+  #show raw.where(lang: "example"): it => {
+    raw(it.text, lang: "typc", block: true)
+    let out = eval(it.text, scope: (parsely: parsely))
+    [#out]
+  }
+
+  #eval(fn.description, mode: "markup")
+]
+
+
+#let show-module-docs(path, module: none) = {
+
+  let sec = "{{PACKAGE_NAME}}"
+  if module != none { sec += "." + module }
+  [== Module #raw(sec)]
+
+  if module != none { module += "." }
+  let m = tidy.parse-module(read(path), name: module)
+
+  for fn in m.functions [
+    - #link(label(fn.name), raw(module + fn.name + "()"))
+  ]
+
+  for fn in m.functions {
+    show-function(fn, module)
+    line(length: 100%, stroke: (thickness: 0.75pt, dash: "dotted"))
+  }
+}
+
+#show-module-docs("../src/parse.typ")
+#show-module-docs("../src/render.typ", module: "render")
+#show-module-docs("../src/util.typ", module: "util")
