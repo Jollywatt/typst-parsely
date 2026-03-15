@@ -28,13 +28,25 @@
 
 #let is-node(it) = type(it) == dictionary and "head" in it
 
-#let walk(it, pre: it => it, post: it => it, leaf: it => it) = {
-  if not is-node(it) { return leaf(it) }
+
+/// Visit every node in a tree and transform it.
+/// For most tasks, a post-walk is what you want -- pre-walks can lead to infinite recursion if used incorrectly.
+#let walk(
+  /// A root node in the format described in @trees.
+  tree,
+  /// Transformation of each node _before_ visiting its children.
+  pre: it => it,
+  /// Transformation of each node _after_ its children have been visited.
+  post: it => it,
+  /// Transformation to apply to leaf nodes, or all non-node children of nodes in the tree.
+  leaf: it => it,
+) = {
+  if not is-node(tree) { return leaf(tree) }
   let w(it) = walk(it, pre: pre, post: post, leaf: leaf)
-  it = pre(it)
-  it.args = it.args.map(w)
-  it.slots = it.slots.keys().zip(it.slots.values().map(w)).to-dict()
-  post(it)
+  tree = pre(tree)
+  tree.args = tree.args.map(w)
+  tree.slots = tree.slots.keys().zip(tree.slots.values().map(w)).to-dict()
+  post(tree)
 }
 
 
