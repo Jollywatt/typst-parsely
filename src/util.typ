@@ -100,3 +100,40 @@
     repr(it)
   }
 }
+
+
+/// Convert content into an abstract syntax tree in which each node is of the form:
+/// ```typc
+/// (head: "element-name", fn: <element-fn>, args: <positional-args>, slots: <named-args>)
+/// ```
+/// The content element may be reconstructed from the node by calling `fn(..args, ..slots)`, provided its arguments and slots have also been converted from nodes into content.
+#let content-to-tree(it, exclude: ()) = {
+  if type(it) != content { return it }
+  let c = content-to-tree.with(exclude: exclude)
+
+  let fn = it.func()
+  let head = repr(fn)
+
+  if head in exclude.map(stringify) { it }
+  else if head == "sequence" {
+    (
+      head: head,
+      fn: (..args) => args.pos().join(),
+      args: it.children,
+      slots: (:) 
+    )
+  } else {
+    let args = element-fields-to-arguments(fn, it.fields())
+
+    (
+      head: head,
+      fn: fn,
+      args: args.pos().map(c),
+      slots: args.named().pairs().map(((k, v)) => {
+        (k, c(v))
+      }).to-dict(),
+    )
+  }
+}
+
+#let tree-to-content(tree) = walk(tree, post: ((fn, args, slots)) => fn(..args, ..slots))
