@@ -65,10 +65,19 @@
       [#it]
     },
     post: ((head, args, slots)) => {
-      let children = args + slots.values()
-      let widths = children.map(it => measure(it).width)
       let head = align(center, text(0.9em, strong(raw(head))))
+
+      let children = args + slots.values()
       if children.len() == 0 { return head }
+
+      let edge-names = (none,)*args.len() + slots.keys()
+      let edge-labels = edge-names.map(e => {
+        if e == none { return }
+        text(0.7em, std.stroke(stroke).paint, raw(e))
+      })
+      let widths = children.zip(edge-labels).map(((c, e)) => {
+        calc.max(measure(c).width, measure(e).width)
+      })
 
       let head-height = measure(head).height
       let total-width = (widths.sum(default: 0pt) + (children.len() - 1)*spread).to-absolute()
@@ -76,27 +85,21 @@
 
       box(width: calc.max(total-width, measure(head).width), align(center, box(width: total-width, {
         grid(
-          columns: children.len(), align: top,
-          row-gutter: grow,
+          columns: widths,
+          row-gutter: (grow, gap),
           column-gutter: spread,
           grid.cell(colspan: children.len(), head),
+          ..edge-labels,
           ..args,
           ..slots.values().map(s => pad(top: 0*gap, s)),
         )
         let x = 0pt
-        let names = (none,)*args.len() + slots.keys()
-        for (width, name) in widths.zip(names) {
+        for (width, label) in widths.zip(edge-labels) {
           x += width/2
-          let shift = 0pt
-          if name != none {
-            let name = text(0.7em, std.stroke(stroke).paint, raw(name))
-            let (width, height) = measure(name)
-            shift = height + gap
-            place(top, dx: x - width/2, dy: head-height + grow - gap - height, name)
-          }
+          let extra = if label == none { 0.7em } else { 0pt }
           place(top, curve(
             curve.move((total-width/2, head-height + gap)),
-            curve.quad((x, head-height + gap + 0.2*grow), (x, head-height + grow - gap - shift)),
+            curve.quad((x, head-height + gap + 0.2*grow), (x, head-height + grow - gap + extra)),
           ))
           x += width/2 + spread
         }
