@@ -131,7 +131,7 @@
     (
       head: head,
       fn: (..args) => args.pos().join(),
-      args: it.children,
+      args: it.children.map(c),
       slots: (:) 
     )
   } else {
