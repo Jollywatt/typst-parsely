@@ -63,18 +63,40 @@
 /// ```example
 /// let tree = (
 ///   head: "parent",
-///   args: ($chi^2$, (head: "child", args: (42,), slots: (:))),
+///   args: ($chi^2$, (head: "child", args: (42, 7), slots: (:))),
 ///   slots: (slotty: range(3)),
 /// )
 /// parsely.render.tree(tree)
+/// h(1fr)
+/// parsely.render.tree(tree, grow: 5em, inset: 4pt,
+///   head-style: it => pad(y: -6pt, circle(radius: 2pt, fill: gray)),
+///   slot-style: it => text(0.9em, gray)[#it:],
+///   edge: line(start: (0%, 0%), end: (100%, 100%), stroke: gray))
+/// h(1fr)
+/// parsely.render.tree(tree, spread: 3em,
+///   head-style: it => text(green, emph[( #it )]),
+///   edge: curve(curve.quad((80%, 0%), (100%, 100%)), stroke: 2pt + green))
 /// ```
 #let tree(
   tree,
+  /// Height between generations
   grow: 2.5em,
+  /// Distance between siblings
   spread: 1em,
+  /// Gap between nodes and edges
   inset: 0.5em,
+  /// Style for node names
   head-style: it => strong(raw(it)),
+  /// Style for slot labels
   slot-style: it => text(0.8em, raw(it)),
+  /// Curve to draw between nodes.
+  /// This gets placed in the tree so that the start point is `(0%, 0%)` and end is `(100%, 100%)`.
+  /// For example:
+  /// ```
+  /// line(start: (0%, 0%), end: (100%, 100%), stroke: blue)    // straight
+  /// curve(curve.quad((100%, 0%), (100%, 100%)), stroke: 2pt)  // arc
+  /// curve(curve.cubic((50%, 50%), (100%, 60%), (100%, 100%))) // brace
+  /// ```
   edge: curve(curve.cubic((50%, 50%), (100%, 60%), (100%, 100%))),
 ) = context {
   set line(stroke: (cap: "round"))
