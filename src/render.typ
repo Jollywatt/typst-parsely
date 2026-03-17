@@ -56,55 +56,125 @@
   pad(out, top: gap*max-depth)
 }
 
-#let tree(tree, grow: 2.5em, spread: 1.5em, stroke: black) = context {
-  set curve(stroke: stroke)
+/// Render a tree given in the format described in @trees.
+/// 
+/// This is meant to be useful for debugging; for more control, consider using the `cetz.tree` submodule of #link("https://cetz-package.github.io/")[CeTZ].
+/// 
+/// ```example
+/// let tree = (
+///   head: "parent",
+///   args: ($chi^2$, (head: "child", args: (42,), slots: (:))),
+///   slots: (slotty: range(3)),
+/// )
+/// parsely.render.tree(tree)
+/// ```
+#let tree(
+  tree,
+  grow: 2.5em,
+  spread: 1em,
+  inset: 0.5em,
+  head-style: it => strong(raw(it)),
+  slot-style: it => text(0.8em, raw(it)),
+  edge: curve(curve.cubic((50%, 50%), (100%, 60%), (100%, 100%))),
+) = context {
+  set line(stroke: (cap: "round"))
   set curve(stroke: (cap: "round"))
-  util.walk(tree,
+
+  // this tree walk is a little complex:
+  // at each node, return a tuple `(it, meta)` where `it`
+  // is the rendered content and `meta` is data that can be
+  // passed from children to parents to do with alignment.
+  // to horizontally align node heads to be more optically pleasing
+  // we need children to tell parents where their heads end up,
+  // so `meta` stores the x-coordinate of the center of each node's head
+  let (it, meta) = util.walk(tree,
     leaf: it => {
-      if it == none { return raw("none", lang: "typc") }
-      [#it]
+      let it = {
+        if it == none { raw("none", lang: "typc") }
+        else { it }
+      }
+      it = pad(y: inset)[#it]
+      (it, measure(it).width/2)
     },
+
     post: ((head, args, slots)) => {
-      let head = align(center, text(0.9em, strong(raw(head))))
+      let meta = {
+        args.map(array.last)
+        slots.values().map(array.last)
+      }
+      let children = {
+        args.map(array.first)
+        slots.values().map(array.first)
+      }
 
-      let children = args + slots.values()
-      if children.len() == 0 { return head }
+      let head = pad(y: inset, head-style(head))
+      let (height: h-height, width: h-width) = measure(head)
 
-      let edge-names = (none,)*args.len() + slots.keys()
-      let edge-labels = edge-names.map(e => {
-        if e == none { return }
-        text(0.7em, std.stroke(stroke).paint, raw(e))
-      })
+      if children.len() == 0 { return (head, measure(head).width/2) }
+
+      let edge-labels = {
+        (none,)*args.len()
+        slots.keys().map(k => box(inset: (top: inset), slot-style(k)))
+      }
+
       let widths = children.zip(edge-labels).map(((c, e)) => {
         calc.max(measure(c).width, measure(e).width)
       })
+      let meta = meta.zip(widths).map(((m, w)) => calc.max(m, w/2))
 
-      let head-height = measure(head).height
-      let total-width = (widths.sum(default: 0pt) + (children.len() - 1)*spread).to-absolute()
-      let gap = grow*0.15
+      let total-width = (widths.sum() + (children.len() - 1)*spread).to-absolute()
 
-      box(width: calc.max(total-width, measure(head).width), align(center, box(width: total-width, {
+
+      let x-children = ()
+      let x = 0pt
+      for (w, m) in widths.zip(meta) {
+        x-children.push((x + m).to-absolute())
+        x += w + spread
+      }
+
+      // place the head at the average of the children's heads
+      // so horizontal placement is visually balanced
+      let x-root = (calc.min(..x-children) + calc.max(..x-children))/2
+
+      let result = {
+        show: box.with(width: calc.max(total-width, h-width))
+        set align(center)
+        show: box.with(width: total-width)
+
         grid(
           columns: widths,
-          row-gutter: (grow, gap),
+          row-gutter: (grow, 0pt),
           column-gutter: spread,
-          grid.cell(colspan: children.len(), head),
-          ..edge-labels,
-          ..args,
-          ..slots.values().map(s => pad(top: 0*gap, s)),
+          grid.cell(colspan: children.len(), align: left, {
+            move(dx: x-root - h-width/2, head)
+          }),
+          ..children,
         )
-        let x = 0pt
-        for (width, label) in widths.zip(edge-labels) {
-          x += width/2
-          let extra = if label == none { 0.7em } else { 0pt }
-          place(top, curve(
-            curve.move((total-width/2, head-height + gap)),
-            curve.quad((x, head-height + gap + 0.2*grow), (x, head-height + grow - gap + extra)),
-          ))
-          x += width/2 + spread
+
+        for (x, label) in x-children.zip(edge-labels) {
+          let y = h-height + grow + - measure(label).height
+
+          place(top + left, dx: x-root, dy: h-height, {
+            box(width: x - x-root, height: y - h-height, edge)
+          })
+
+          place(top, dx: x, dy: y, {
+            show: move.with(dx: -measure(label).width/2)
+            label
+          })
         }
-      })))
+      }
+
+      let meta = calc.max(
+        x-root.to-absolute(),
+        h-width/2,
+      )
+
+      return (result, meta)
+
     }
   )
+
+  it
 }
 
