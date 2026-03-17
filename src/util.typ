@@ -125,13 +125,17 @@
 
 /// Convert content into an abstract syntax tree.
 /// 
-/// Each node is of the form:
+/// Each node in the resulting tree is of the form:
 /// ```typc
-/// (head: "element-name", fn: <element-fn>, args: <positional-args>, slots: <named-args>)
+/// (
+///   head: "element-name",
+///   fn: <element-fn>,
+///   args: <positional-args>,
+///   slots: <named-args>,
+/// )
 /// ```
-/// The content element may be reconstructed from the node by calling `fn(..args, ..slots)`, provided its arguments and slots have also been converted from nodes into content.
-/// 
-/// See also @tree-to-content.
+/// The node may be converted back into content by calling `fn(..args, ..slots)`, provided its arguments and slots have also been converted from nodes into content.
+/// This is what @tree-to-content does.
 #let content-to-tree(
   it,
   /// Names of element functions to exclude from converting as strings.
@@ -171,6 +175,5 @@
 }
 
 
-/// Reconstruct content from a tree in the format given by @content-to-tree.
-/// This simply performs a post-walk transforming nodes of the form `(head, fn, args, slots)` into `fn(..args, ..slots)`.
+/// Reconstruct content from a tree given by @content-to-tree.
 #let tree-to-content(tree) = walk(tree, post: ((fn, args, slots)) => fn(..args, ..slots))
