@@ -779,6 +779,13 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
   })
   #label(fn.name)
 
+  #let i = fn.description.position(regex("\n\s*\n"),)
+  #if i == none { i = 0 }
+  #let summary = fn.description.slice(0, i)
+  #let details = fn.description.slice(i)
+
+  #eval(summary, mode: "markup")
+
   #for (arg, (description,)) in fn.args [
     #if description == "" { continue }
     - #strong(raw(arg + ":")) #eval(description, mode: "markup")
@@ -787,10 +794,11 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
   #show raw.where(lang: "example"): it => {
     raw(it.text, lang: "typc", block: true)
     let out = eval(it.text, scope: (parsely: parsely))
+    set text(font: "Fira Sans")
     [#out]
   }
 
-  #eval(fn.description, mode: "markup")
+  #eval(details, mode: "markup")
 ]
 
 
@@ -810,6 +818,7 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
   for fn in m.functions {
     show-function(fn, module)
     line(length: 100%, stroke: (thickness: 0.75pt, dash: "dotted"))
+    v(5em, weak: true)
   }
 }
 

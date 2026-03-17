@@ -94,8 +94,8 @@
   /// For example:
   /// ```
   /// line(start: (0%, 0%), end: (100%, 100%), stroke: blue)    // straight
-  /// curve(curve.quad((100%, 0%), (100%, 100%)), stroke: 2pt)  // arc
   /// curve(curve.cubic((50%, 50%), (100%, 60%), (100%, 100%))) // brace
+  /// curve(curve.quad((100%, 0%), (100%, 100%)), stroke: 2pt)  // arc
   /// ```
   edge: curve(curve.cubic((50%, 50%), (100%, 60%), (100%, 100%))),
 ) = context {

@@ -30,15 +30,16 @@
 
 
 /// Visit every node in a tree and transform it.
-/// For most tasks, a post-walk is what you want -- pre-walks can lead to infinite recursion if used incorrectly.
+/// 
+/// For most tasks, a post-walk is what you want (pre-walks can lead to infinite recursion if used incorrectly).
 #let walk(
   /// A root node in the format described in @trees.
   tree,
-  /// Transformation of each node _before_ visiting its children.
+  /// Function to transform each node _before_ visiting its children.
   pre: it => it,
-  /// Transformation of each node _after_ its children have been visited.
+  /// Function to transform each node _after_ its children have been visited.
   post: it => it,
-  /// Transformation to apply to leaf nodes, or all non-node children of nodes in the tree.
+  /// Function to apply to leaf nodes, or all non-node children of nodes in the tree.
   leaf: it => it,
 ) = {
   if not is-node(tree) { return leaf(tree) }
@@ -122,14 +123,20 @@
 }
 
 
-/// Convert content into an abstract syntax tree in which each node is of the form:
+/// Convert content into an abstract syntax tree.
+/// 
+/// Each node is of the form:
 /// ```typc
 /// (head: "element-name", fn: <element-fn>, args: <positional-args>, slots: <named-args>)
 /// ```
 /// The content element may be reconstructed from the node by calling `fn(..args, ..slots)`, provided its arguments and slots have also been converted from nodes into content.
 /// 
 /// See also @tree-to-content.
-#let content-to-tree(it, exclude: ()) = {
+#let content-to-tree(
+  it,
+  /// Names of element functions to exclude from converting as strings.
+  exclude: ()
+) = {
   if type(it) != content { return it }
 
   if type(exclude) != array { exclude = (exclude,) }
