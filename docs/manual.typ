@@ -218,9 +218,29 @@
 #context align(right, block(width: 50%, outline(depth: 1, title: none)))
 
 #pagebreak()
-#heading(numbering: none)[Contents]
+#heading(numbering: none, outlined: false)[Contents]  <outline>
 #show outline.entry.where(level: 1): it => v(1em) + it
-#context outline(target: selector(heading).after(here()), title: none)
+#outline(target: selector(heading), title: none)
+
+
+#show heading: it => context {
+  it 
+
+  let parent = query(selector(heading)
+    .before(here()))
+    .filter(h => h.level < it.level)
+    .last(default: query(<outline>).last())
+    .location()
+
+  if parent.page() < here().page() {
+    let hitbox = 1em
+    show underline: it => it.body
+    place(dx: measure(it).width + .5em, dy: -1.7em, {
+      let icon = text(luma(80%), sym.arrow.t)
+      pad(-hitbox, link(parent, box(inset: hitbox, icon)))
+    })
+  }
+}
 
 
 #pagebreak()
@@ -765,19 +785,24 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
 
 = Function reference <func-ref>
 
+#context outline(target: selector(heading).after(here()), depth: 2, indent: 0pt, title: none)
+
 #set heading(numbering: none)
 
 
-#let show-function(fn, module) = [
-
+#let show-function(fn, modules) = [
   === #raw({
-    module
-    fn.name
+    (..modules, fn.name).join(".")
     "("
-    fn.args.keys().join(", ")
+    if fn.args.len() > 3 {
+      (..fn.args.keys().slice(0, 3), "..").join(", ")
+    } else {
+      fn.args.keys().join(", ")
+    }
     ")"
   })
   #label(fn.name)
+  
 
   #let i = fn.description.position(regex("\n\s*\n"),)
   #if i == none { i = 0 }
@@ -802,26 +827,25 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
 ]
 
 
-#let show-module-docs(path, module: none) = {
+#let show-module-docs(path, ..args) = {
+  let modules = args.pos()
 
-  let sec = "{{PACKAGE_NAME}}"
-  if module != none { sec += "." + module }
-  [== Module #raw(sec)]
+  v(3em, weak: true)
+  [== Module #raw(("{{PACKAGE_NAME}}", ..modules).join("."))]
 
-  if module != none { module += "." }
-  let m = tidy.parse-module(read(path), name: module)
+  let m = tidy.parse-module(read(path))
 
   for fn in m.functions [
-    - #link(label(fn.name), raw(module + fn.name + "()"))
+    - #link(label(fn.name), raw((..modules, fn.name).join(".") + "()"))
   ]
 
   for fn in m.functions {
-    show-function(fn, module)
-    line(length: 100%, stroke: (thickness: 0.75pt, dash: "dotted"))
-    v(5em, weak: true)
+    v(3em, weak: true)
+    show-function(fn, modules)
   }
+
 }
 
 #show-module-docs("../src/parse.typ")
-#show-module-docs("../src/render.typ", module: "render")
-#show-module-docs("../src/util.typ", module: "util")
+#show-module-docs("../src/render.typ", "render")
+#show-module-docs("../src/util.typ", "util")
