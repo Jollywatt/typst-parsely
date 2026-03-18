@@ -108,6 +108,7 @@
       grid(
         columns: (auto, auto, auto),
         align: (right + bottom, center + bottom, left),
+        row-gutter: 2pt,
         inset: 5pt,
         ..eqns.map(eqn => {
           let e = eqn
@@ -119,6 +120,12 @@
     }),
   ), supplement: [Example], ..args)
 }
+
+#let bracket-styler = (tree, grammar) => parsely.walk(tree, post: n => {
+  let it = parsely.render.node(n, grammar)
+  let c = hash-color(n.head).darken(10%)
+  text(c, $lr([it])$)
+})
 
 
 #let cover-graphic = {
@@ -493,7 +500,7 @@ Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?
 
 === Matching any pattern in a union <slot-any>
 
-Slots with an `any` argument containing an array of sub-patterns only match one of those patterns (in the order they are given).
+Slots with an "`any`" argument containing an array of sub-patterns only match one of those patterns (in the order they are given).
 
 This is sometimes useful for grouping many similar tokens together into one operator.
 
@@ -502,14 +509,14 @@ comp: (infix: slot("op", any: ($=$, $!=$, $<$, $>$, $<=$, $>=$)))
 ```, (
   $xi = 2 > epsilon != 0$,
 ), caption: [
-  All comparison tokens are parsed as the `comp` operator tagged by an `"op"` slot.
+  All comparison tokens are parsed as the `"comp"` operator tagged by an `"op"` slot.
 ])
 
 === Matching conditionally (slot guards) <slot-guard>
 
-Slots may be made conditional by supplying a boolean predicate in the `guard` argument.
-A predicate is a function accepting the matched content and returning a boolean.
-A regular expression `re` can also be used as a shortcut for the predicate function `it => parsely.stringify(it).match(re) != none`.
+Slots can be made conditional by supplying a boolean predicate in the "`guard`" argument.
+This is a function accepting the slot's matched content and returning a boolean.
+Instead of a function, a regular expression can also be used as shorthand for the predicate `it => parsely.util.stringify(it).match(re) != none`.
 
 #grammar-examples(```typ
 sep: (infix: $,$, assoc: true),
@@ -579,12 +586,7 @@ The default precedence is zero.
     $4pi r^2 + z!$,
     $-X k! Z?$,
   ),
-  styler: (tree, grammar) => parsely.walk(tree, post: n => {
-    let it = parsely.render.node(n, grammar)
-    let c = hash-color(n.head).darken(10%)
-    text(c, $lr((it), size: #115%)$)
-
-  }),
+  styler: bracket-styler,
   caption: [
     Precedence is higher for "stickier" operators, and can be an integer or float.
   ]
@@ -604,6 +606,7 @@ This allows summation notation "$sum_#`var` #`body`$" to be parsed as a prefix o
     $sum_i alpha (x_i + y_i) + z$,
     $sum_i alpha (x_i dot y_i + z_i)$,
   ),
+  styler: bracket-styler,
   caption: [
     Summation notation as a prefix operator with higher precedence than addition.
   ]
@@ -626,15 +629,8 @@ Possible values are `left` (default), `right` and `true`, for left/right associa
     $a ==> b ==> c$,
     $a <==> b <==> c$,
   ),
-  styler: (tree, grammar) => parsely.walk(tree, post: n => {
-    let it = parsely.render.node(n, grammar)
-    let c = hash-color(n.head).darken(10%)
-    text(c, $(it)$)
-
-  }),
+  styler: bracket-styler,
 )
-
-
 
 == How trees are represented <trees>
 
