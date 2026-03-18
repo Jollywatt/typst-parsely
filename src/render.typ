@@ -200,3 +200,59 @@
   it
 }
 
+/// Visualise a tree as a sequence of nodes enclosed by over- or under-braces. 
+/// 
+/// ```example
+/// let tree = parsely.util.content-to-tree(circle(stroke: 5pt)[Hello *World*])
+/// parsely.render.waterfall(tree)
+/// ```
+/// 
+/// ```example
+/// let tree = parsely.parse($sqrt(1 + x^2/n)$, parsely.common.arithmetic).tree
+/// let c = parsely.util.random-color.with(lightness: (30%, 30%), chroma: 30%)
+/// parsely.render.waterfall(tree, side: bottom, head-color: c)
+/// ```
+#let waterfall(
+  tree,
+  /// Padding inside nodes
+  inset: 0.25em,
+  /// Vertical padding; higher makes a taller diagram
+  grow: 0.5em,
+  /// Corner radius
+  radius: 0.5em,
+  /// Function taking the node's head and returning a color.
+  head-color: util.random-color,
+  /// Style for node names
+  head-style: it => strong(raw(it)),
+  /// Style for slot labels
+  slot-style: it => text(0.8em, raw(it)),
+  /// Show braces on this side of nodes
+  side: top,
+) = util.walk(tree, post: ((head, args, slots)) => {
+  let c = head-color(head)
+
+  slots = slots.pairs().map(((k, v)) => stack(
+    dir: direction.from(side),
+    spacing: 0.4em,
+    text(c, slot-style(k)),
+    [#v],
+  ))
+  let children = args + slots
+
+  set box(stroke: (paint: c, cap: "square"))
+  set grid.vline(stroke: c)
+  show: box.with(
+    stroke: (rest: 1pt, repr(side): 1.75pt, repr(side.inv()): none),
+    radius: (repr(side): radius),
+  )
+  grid(
+    align: side.inv(),
+    inset: (x: inset, repr(side): grow),
+    columns: 1 + children.len(),
+    text(c, head-style(head)),
+    ..children,
+    ..range(children.len()).map(x => {
+      grid.vline(x: x + 1)
+    }),
+  )
+})

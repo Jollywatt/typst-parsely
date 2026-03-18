@@ -180,3 +180,42 @@
 
 /// Reconstruct content from a tree given by @content-to-tree.
 #let tree-to-content(tree) = walk(tree, post: ((fn, args, slots)) => fn(..args, ..slots))
+
+
+
+/// A pseudo-random colour based on a seed value.
+/// 
+/// Subsequent arguments are passed to `color.oklch` and may each be a single value
+/// or a pair `(min, max)` indicating a random value in a range.
+/// For example, `hue: (0deg, 90deg)` produces reddish hues between `0deg` and `90deg`
+/// uniformly randomly.
+/// 
+/// ```example
+/// import parsely.util: random-color
+/// "Hello world! I am random shades of blue.".split().map(word => {
+///   let c = random-color(word, lightness: (20%, 70%), hue: (200deg, 300deg))
+///   text(c, word)
+/// }).join(" ")
+/// ```
+#let random-color(
+  seed,
+  lightness: 60%,
+  chroma: (30%, 100%),
+  hue: (0deg, 360deg),
+) = {
+  let entropy = array(bytes(repr(seed)))
+  let noise(seed) = {
+    for byte in entropy { seed += calc.rem((byte + seed)*67, 313) }
+    calc.rem(seed, 101)/100
+  }
+  let vary(it, ε) = {
+    let (min, max) = if type(it) == array { it } else { (it, it) }
+    min + (max - min)*ε
+  }
+  color.oklch(
+    vary(lightness, noise(21)),
+    vary(chroma, noise(31)),
+    vary(hue, noise(47)),
+  )
+}
+

@@ -790,7 +790,7 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
   === #raw({
     (..modules, fn.name).join(".")
     "("
-    if fn.args.len() > 3 {
+    if fn.args.len() > 4 {
       (..fn.args.keys().slice(0, 3), "..").join(", ")
     } else {
       fn.args.keys().join(", ")
@@ -807,9 +807,11 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
 
   #eval(summary, mode: "markup")
 
-  #for (arg, (description,)) in fn.args [
-    #if description == "" { continue }
-    - #strong(raw(arg + ":")) #eval(description, mode: "markup")
+  #for (arg, info) in fn.args [
+    #if info.description == "" { continue }
+    - #strong(raw(arg + ":"))
+      #if "default" in info [#raw(info.default) #h(0.5em)]
+      #eval(info.description, mode: "markup")
   ]
 
   #show raw.where(lang: "example"): it => {
