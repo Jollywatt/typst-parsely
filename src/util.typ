@@ -113,6 +113,9 @@
   it + (depth: depth + 1)
 })
 
+/// Convert anything into a string.
+/// 
+/// For textual elements, returns the `"text"` field. Falls back to `repr` for other content.
 #let stringify(it) = {
   if type(it) == str { it }
   else if type(it) == content and "text" in it.fields() {
