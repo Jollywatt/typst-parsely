@@ -91,7 +91,7 @@
     frame(fill: code-fill, {
       let lines = grammar-block.text.split("\n")
       let it = for l in lines {
-        if l.match(regex("^\w+:")) == none { raw(l + "\n") }
+        if l.match(regex("^[\w-]+:")) == none { raw(l + "\n") }
         else {
           let i = l.position(":")
           let key = l.slice(0, i)
@@ -334,7 +334,7 @@
 
 = Usage examples <examples>
 
-This section contains some intresting self-contained applications of Parsely.
+This section contains some interesting self-contained applications of Parsely.
 Each section is a separate example file which may be found at
 #{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
 
@@ -436,7 +436,7 @@ In addition to its kind and pattern, an operator can have any of the keys in @op
   [@assoc[Associativity] for infix operators, ignored for other kinds.],
 
   `guard`,
-  [A @op-guard[predicate function] to allow matching nodes conditionally depending on the values of slots. Must be a boolean function accepting a dicionary.],
+  [A @op-guard[predicate function] to allow matching nodes conditionally depending on the values of slots. Must be a boolean function accepting a dictionary.],
 
   `rewrite`,
   [A @rewrite[rewrite rule] or function which takes the node which would be produced and transforms it before parsing continues.],
@@ -450,7 +450,7 @@ In addition to its kind and pattern, an operator can have any of the keys in @op
 
 == Pattern matching and slots <slots>
 
-Operator patterns are used to match sequences of tokens while parsing content.
+Operator patterns are used to match sequences of tokens while parsing content.\
 Patterns can be:
 
 - *Single tokens*, like `$+$` or `$in$`.
@@ -516,7 +516,8 @@ comp: (infix: slot("op", any: ($=$, $!=$, $<$, $>$, $<=$, $>=$)))
 
 Slots can be made conditional by supplying a boolean predicate in the "`guard`" argument.
 This is a function accepting the slot's matched content and returning a boolean.
-Instead of a function, a regular expression can also be used as shorthand for the predicate `it => parsely.util.stringify(it).match(re) != none`.
+You can also use a regular expression instead of a function.
+A regular expression guard is shorthand for the predicate function `it => parsely.util.stringify(it).match(re) != none`.
 
 #grammar-examples(```typ
 sep: (infix: $,$, assoc: true),
@@ -639,7 +640,7 @@ Everywhere in this manual, a "tree" or "node" refers to a dictionary of the form
 (head: str, args: array, slots: dictionary)
 ```
 where "`head`" is name of the node, and the node's children are the elements of "`args`" or the values of "`slots`".
-Both `args` and `slots` always be present, even if they are empty.
+Both `args` and `slots` must be present, even if they are empty.
 
 Nodes in a tree are often represented in the simpler array form `(head, ..children)`.
 However, having both kinds of children makes it easier to represent
@@ -676,13 +677,70 @@ See the source code of the @examples for many different examples of syntax tree 
 
 == Operator rewriting and operator guards
 
+Advanced uses of operators involve guard predicates and rewrite rules, which are both functions that may be supplied to operator dictionaries with a `guard` or `rewrite` key.
 
 === Operator predicates <op-guard>
 
+Similar to @slot-guard[slot guards], operators can be given guards which match depending on all the matched slots.
+Guards can be specified by adding a `guard` entry to the operator dictionary.
+The predicate function for a slot guard receives a dictionary of all slots as its only argument.
+
+@example-op-guard shows how you can use an operator guard to match integrals conditionally if neither of the limits contain the string `"∞"`.
+
+#grammar-examples(```typ
+definite-integral: (
+  prefix: $integral_slot("lo")^slot("hi")$,
+  guard: slots => {
+    not slots.values().any(it => "∞" in parsely.stringify(it))
+  }
+),
+integral: (prefix: $integral_slot("lo")^slot("hi")$),
+neg: (prefix: $-$, prec: 2),
+mul: (infix: $$, prec: 2, assoc: true), // must be before dif
+dif: (prefix: $dif$, prec: 3),
+```, (
+  $integral_0^1 u dif u$,
+  $integral_0^oo e^(-x^2) dif x$,
+  $integral_0^t e^(-x^2) dif x$,
+  $integral_(-oo)^t f(tau) dif tau$,
+), caption: [
+  Using operator guards to only match integrals that don't have "$oo$"
+ in the limits.
+]) <example-op-guard>
+
+
 === Rewrite rules <rewrite>
+
+An operator rewrite rule is a function which transforms a node immediately after an operator is matched but before its children are parsed.
+Rewrite rules can be specified by adding a `rewrite` entry to the operator dictionary.
+The rewrite rule function receives a node as its only argument and may return the same node (performing no rewrite) or any other node tree.
+
+#grammar-examples(```typ
+add: (infix: $+$),
+slot-pair: (
+  match: ${slot("left*"), slot("right*")}$,
+),
+arg-pair: (
+  match: $[slot("left*"), slot("right*")]$,
+  rewrite: ((head, args, slots)) => {
+    (head: head, args: (slots.left, slots.right), slots: (:))
+  }
+)
+```, (
+  ${A, B + C}$,
+  $[A + B, C]$,
+), caption: [
+  Using an operator rewrite rule to convert slot a
+])
+
+Rewrite rules may be helpful when the content tree which you want to parse has a sufficiently different topology to the desired syntax tree.
+For example, correctly @parsing-attach involves a rewrite rule.
+
 
 
 == Gotchas
+
+Here are some tips for achieving common things which are a little tricky to get exactly right.
 
 === Parsing juxtaposition as an operator <juxt>
 
@@ -724,13 +782,16 @@ grp: (match: $(slot("body*"))$), // "juxt" must be before this
 
 
 
-=== Parsing exponents and subscripts
+=== Parsing exponents and subscripts <parsing-attach>
 
 Because Typst content is itself a tree-like structure, some content cannot be parsed in the same way that a string of tokens would be.
 For instance, the body of the equation `$x_i^2$` is a single `math.attach` element containing both the superscript and subscript as fields:
 #example(```typ
 #let tree = parsely.util.content-to-tree($x_i^2$.body)
+Original content tree:
 #parsely.render.tree(tree)
+Desired syntax tree:
+#parsely.render.tree((head: "pow", args: ((head: "index", args: (), slots: (base: [x], index: [i])), 2), slots: (:)))
 ```)
 In fact, `$x_i^2$` and `$x^2_i$` are indistinguishable.
 This makes parsing `$x_i^2$` as $(x_i)^2$ as opposed to $(x^2)_i$ slightly tricky, for example.
