@@ -1,14 +1,51 @@
 #import "/src/match.typ": *
+#import "/src/render.typ"
 #import "/src/util.typ": stringify
 
-#let assert-match(pattern, ..expr-result) = {
+// preview mode is true when viewing file with tinymist, but not when running tests
+#let preview-mode = "x-preview" in sys.inputs
+#set page(width: auto, height: auto, margin: 5mm) if preview-mode
+
+#let waterfall-compact = render.waterfall.with(head-style: it => rotate(-90deg, strong(raw(it)), reflow: true))
+#let assert-match(pattern, ..expr-result) = page({
   for (expr, result) in expr-result.pos().chunks(2) {
     if type(result) == dictionary {
       result = result.keys().zip(result.values().map(unwrap)).to-dict()
     }
-    assert.eq(match(pattern, expr), result)
+    let m = match(pattern, expr)
+
+    if preview-mode {
+      set grid(
+        columns: 2,
+        align: (right + horizon, left),
+        gutter: 1em,
+      )
+      if m == result {
+        show: block.with(fill: green.transparentize(90%), inset: 1em)
+        grid(
+          text(green)[Test passed],
+          expr,
+        )
+      } else {
+        show: block.with(fill: red.transparentize(90%), inset: 1em)
+        grid(
+          text(red)[Test failed],
+          expr,
+          [`pattern`:],
+          waterfall-compact(util.content-to-tree(pattern), side: top),
+          [`expr`:],
+          waterfall-compact(util.content-to-tree(expr), side: bottom),
+          [Expected:],
+          [#result],
+          [Result:],
+          [#m],
+        )
+      }
+    } else {
+      assert.eq(m, result)
+    }
   }
-}
+})
 
 #assert-match("A", "A", (:))
 #assert-match("A", "B", false)

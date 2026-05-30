@@ -1,5 +1,51 @@
 #import "/src/exports.typ": *
 
+// preview mode is true when viewing file with tinymist, but not when running tests
+#let preview-mode = "x-preview" in sys.inputs
+#set page(width: auto, height: auto, margin: 5mm) if preview-mode
+
+#let waterfall-lisp(lisp, ..args) = {
+  let tree = util.walk-array(lisp, post: ((head, ..args)) => (head: head, args: args, slots: (:)))
+  render.waterfall(tree, head-style: it => rotate(-90deg, strong(raw(it)), reflow: true), ..args)
+}
+#let to-lisp(tree) = util.walk(tree, post: it => (it.head, ..it.args, ..it.slots.values()))
+
+#let assert-expr(grammar, it, target) = page({
+  let (tree, rest) = parse(it, grammar)
+  let lisp = to-lisp(tree)
+  target = util.walk-array(target, leaf: it => {
+    if type(it) == content and it.func() == math.equation {
+      it.body
+    } else {
+      it
+    }
+  })
+
+  if preview-mode {
+    set grid(columns: 2, align: (right + horizon, left), gutter: 1em)
+    if lisp == target {
+      show: block.with(fill: green.transparentize(90%), inset: 1em)
+      grid(
+        text(green)[Test passed],
+        it,
+      )
+    } else {
+      show: block.with(fill: red.transparentize(90%), inset: 1em)
+      grid(
+        text(red)[Test failed],
+        it,
+        [Result:],
+        waterfall-lisp(lisp) + text(red, rest),
+        [Expected:],
+        waterfall-lisp(target, side: bottom),
+      )
+    }
+  } else {
+    assert.eq(lisp, target)
+  }
+})
+
+
 #let grammar = (
   eq: (infix: $=$, prec: 0),
   sum: (infix: $+$, prec: 1),
@@ -13,18 +59,7 @@
   (head: "sum", args: ($1$.body, $2$.body), slots: (:)),
 )
 
-#let assert-expr(grammar, it, target) = {
-  let (tree, rest) = parse(it, grammar)
-  let lisp = util.walk(tree, post: it => (it.head, ..it.args, ..it.slots.values()))
-  target = util.walk-array(target, leaf: it => {
-    if type(it) == content and it.func() == math.equation {
-      it.body
-    } else {
-      it
-    }
-  })
-  assert.eq(lisp, target)
-}
+
 
 #assert-expr(grammar,
   $a + b$,
