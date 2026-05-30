@@ -252,7 +252,7 @@
     inset: (x: inset, repr(side): grow),
     columns: 1 + children.len(),
     text(c, head-style(head)),
-    ..children,
+    ..children.map(it => [#it]),
     ..range(children.len()).map(x => {
       grid.vline(x: x + 1)
     }),
