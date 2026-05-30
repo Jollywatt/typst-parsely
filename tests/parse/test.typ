@@ -271,3 +271,28 @@
   $dif x y + x dif y$,
   ("add", ("mul", ("dif", $x$), $y$), ("mul", $x$, ("dif", $y$))),
 )
+
+
+// invalid combinations of pre/inf/postfix
+#let grammar = (
+  pre: (prefix: $L$, prec: 1),
+  post: (postfix: $R$, prec: 1),
+  inf: (infix: $I$),
+)
+
+#assert-expr(grammar,
+  $L a I b R$,
+  ("inf", ("pre", $a$), ("post", $b$))
+)
+#assert-expr(grammar,
+  $a R I L b$,
+  ("inf", ("post", $a$), ("pre", $b$))
+)
+#assert-expr(grammar,
+  $a L b$, // this is two incomplete expressions: a, L(b)
+  $a$
+)
+#assert-expr(grammar,
+  $a I R b$, // this is invalid: I(a, R(??)), b
+  ("inf", $a$, $R$)
+)

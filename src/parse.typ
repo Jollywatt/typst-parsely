@@ -161,8 +161,6 @@
   let old-tokens = tokens
   let (op, tokens) = parse-op(tokens, grammar, ctx: (left: left))
 
-
-
   if op == none {
     // leading token(s) did not match any operator
     // so we consume as a literal token
@@ -182,9 +180,9 @@
     tokens = as-array(rest) // consumed op + right
   }
 
-
-
   // infix and postfix
+  // we found a left node and seek an operator that can consume it
+
   let i = 0
   while tokens.len() > 0 {
     assert(type(tokens) == array)
@@ -193,31 +191,48 @@
     }
     i += 1
 
-    let (op, subtokens) = parse-op(tokens, grammar, ctx: (left: left))
-    if op == none { break }
-    
-    if op.kind == "postfix" {
-      if op.prec < min-prec { break }
-      left = make-node(op, args: (left,), old-tokens)
+    let (subop, subtokens) = parse-op(tokens, grammar, ctx: (left: left))
 
+    if subop == none {
+      // encountered an atomic node directly following the left node
+      // these two nodes are not joined by an operator
+      // leave unparsed, the expression is completed early
+      break
+
+    } else if subop.kind == "match" {
+      // encountered a match node which does not consume any left nodes
+      // leave unparsed, the expression is completed early
+      break
+
+    } else if subop.kind == "prefix" {
+      // we have an unconsumed node to the left of a prefix operator...
+      // this is malformed but it is better to exit than to panic
+      break
+    
+    } else if subop.kind == "postfix" {
+      // we found a postfix operator to consume the left node
+      if subop.prec < min-prec { break }
+      left = make-node(subop, args: (left,), old-tokens)
       tokens = subtokens // consumed op
       continue
 
-    } else if op.kind == "infix" {
+    } else if subop.kind == "infix" {
+      // we found an infix operator to consume the left node
+      // but we must continue to find a right node (or nodes if associative)
 
       // nothing left for right of infix
       // leave operator unparsed
       if subtokens.len() == 0 { break }
 
-      if op.prec < min-prec { break }
+      if subop.prec < min-prec { break }
       
-      let assoc = op.at("assoc", default: alignment.left)
+      let assoc = subop.at("assoc", default: alignment.left)
       if assoc == true {
         // n-ary
-        left = make-node(op, args: (left,), ())
+        left = make-node(subop, args: (left,), ())
         let abort = false
         while true {
-          let (tree: right, rest) = parse(subtokens, grammar, min-prec: op.prec + 1e-3)
+          let (tree: right, rest) = parse(subtokens, grammar, min-prec: subop.prec + 1e-3)
           rest = as-array(rest)
 
           // don't allow rhs of operator to be none
@@ -229,7 +244,7 @@
           // if followed by same operator, absorb
           let (next-op, rest) = parse-op(rest, grammar, ctx: (left: right))
           if next-op == none { break }
-          if next-op.name != op.name { break }
+          if next-op.name != subop.name { break }
           if next-op.prec < min-prec { break }
           subtokens = rest
         }
@@ -237,27 +252,21 @@
         continue
       } else {
         // binary
-        let right-prec = if assoc == alignment.left { op.prec + 1e-3 } else { op.prec }
+        let right-prec = if assoc == alignment.left { subop.prec + 1e-3 } else { subop.prec }
         let (tree: right, rest) = parse(subtokens, grammar, min-prec: right-prec)
         
         // don't allow rhs of operator to be none
         if right == none { break }
 
-        left = make-node(op, args: (left, right), ())
+        left = make-node(subop, args: (left, right), ())
 
         tokens = as-array(rest)
         continue
       }
 
-    } else if op.kind == "match" {
-      // encountered two consecutive tokens
-      // which are not joined by any operator
-      // leave unparsed
-      break
+    } else {
+      panic(op)
     }
-    
-    panic(op)
-
   }
   
   return (tree: left, rest: tokens.join())
