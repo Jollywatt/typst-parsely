@@ -3,10 +3,24 @@
 
 #show "CeTZ": link.with("https://cetz-package.github.io/")
 
-= Drawing expression trees with CeTZ 
+= Drawing expression trees
 
-The CeTZ package has utilities for drawing trees represented as nested arrays.
-You can transform Parsely's syntax trees from their dictionary format into `(node, ..children)` format with a simple post-walk.
+#let eq = $a x^2 + b x + c$
+
+You can use the built-in functions `tree()` and `waterfall()` in the `parsely.render` module to quickly visualise syntax trees.
+
+For example, here is the syntax tree for the equation #eq parsed with the grammar `parsely.common.arithmetic` and rendered as a tree and waterfall:
+
+#let (tree, rest) = parsely.parse(eq, parsely.common.arithmetic)
+#grid(
+  columns: (2fr, 3fr),
+  align: center + horizon,
+  parsely.render.tree(tree),
+  parsely.render.waterfall(tree),
+)
+
+The CeTZ package can also draw trees represented as nested arrays.
+You can transform Parsely's syntax trees from their dictionary form into array form `(node, ..children)` with a simple post-walk.
 
 #let eqn-tree(eqn) = {
   let (tree, rest) = parsely.parse(eqn, parsely.common.arithmetic)

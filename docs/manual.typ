@@ -287,6 +287,8 @@
 
   Operators can be given @prec[precedence], @assoc[associativity] and @slots[pattern matching slots].
 
+  Alternatively, use the built-in grammar, `parsely.common.arithmetic`.
+
 + Call `parsely.parse()` on content along with the grammar to use.
 
   #let eqn = $(a + b)^2 = a^2 + 2a b + b^2$
@@ -332,11 +334,11 @@
 
 = Usage examples <examples>
 
-This section contains some interesting self-contained applications of Parsely.
-Each section is a separate example file which may be found at
+This section contains interesting self-contained applications of Parsely.
+Each section is a standalone example file which may be found at
 #{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
 
-#example-file("examples/cetz-tree.typ", orange)
+#example-file("examples/trees.typ", orange)
 #example-file("examples/venn.typ", yellow)
 #example-file("examples/calc.typ", blue)
 #example-file("examples/pariman.typ", green)
