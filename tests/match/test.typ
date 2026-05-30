@@ -221,3 +221,17 @@
   $x y 1$, false,
   $x$, (hi: $x$),
 )
+
+// edge cases
+#assert-match(
+  $dif slot("var")$,
+  $dif x$, (var: $x$),
+)
+
+
+// nested sequences
+#assert-match(
+  $a + b + c$,
+  $ #$a + b$.body + c $,
+  (:)
+)

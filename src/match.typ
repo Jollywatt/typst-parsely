@@ -64,6 +64,9 @@
 /// that was not consumed by the pattern.
 #let match-sequence(pattern, expr, match: none, ctx: (:)) = {
   pattern = tighten(util.as-array(pattern))
+  
+  pattern = util.flatten-sequence(pattern)
+  expr = util.flatten-sequence(expr)
 
   let (pi, ei) = (0, 0)
   let is-tight = false

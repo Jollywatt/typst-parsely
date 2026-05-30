@@ -245,19 +245,29 @@
   cmp: (infix: slot("op", any: ($=_slot("annot")$, $<$, $>$))),
 )
 
-#assert.eq(
-  parse($x$, grammar),
-  (
-    tree: $x$.body,
-    rest: none,
-  )
+#assert-expr(grammar,
+  $x$,
+  $x$,
+)
+#assert-expr(grammar,
+  $42$,
+  ("number", [42]),
 )
 
-#assert.eq(
-  parse($42$, grammar),
-  (
-    tree: (head: "number", args: (), slots: (it: [42])),
-    rest: none,
-  )
+
+// other cases
+
+#let grammar = (
+  add: (infix: $+$, prec: 1, assoc: true),
+  mul: (infix: $$, prec: 3, assoc: true), // must be before match operators
+  dif: (match: $dif slot("var")$),
 )
 
+#assert-expr(grammar,
+  $dif x$,
+  ("dif", $x$),
+)
+#assert-expr(grammar,
+  $dif x y + x dif y$,
+  ("add", ("mul", ("dif", $x$), $y$), ("mul", $x$, ("dif", $y$))),
+)
