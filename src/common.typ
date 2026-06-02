@@ -12,8 +12,10 @@
 
   add: (infix: $+$, prec: 1, assoc: true),
   sub: (infix: $-$, prec: 1),
+  add-sub: (infix: $plus.minus$, prec: 1),
   plus: (prefix: $+$, prec: 2),
   neg: (prefix: $-$, prec: 2),
+  plus-neg: (prefix: $plus.minus$, prec: 1),
 
   factorial: (postfix: $tight !$, prec: 3),
 

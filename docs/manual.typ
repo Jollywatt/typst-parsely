@@ -369,15 +369,69 @@ For example, the simple grammar in @example-grammar defines:
   mul: (infix: $times$, prec: 2, assoc: true),
   pow: (match: $slot("base")^slot("exp")$),
 )
-```), caption: [Simple example grammar]) <example-grammar>
+```), caption: [A simple example of a grammar]) <example-grammar>
 
-The order that operators are listed in a grammar matters (and is not related to @prec[operator precedence]).
-The first operator whose pattern matches content will be used to parse that content.
+In a grammar, #highlight[the order that operators are listed matters]: the first matching operator in the grammar is used to parse a node.
+(This is separate to @prec[operator precedence].)
 This means operators should generally be listed with the more specific patterns earlier and "catch all" patterns later.
-An important special case is when @juxt.
+(An important example of thisis when @juxt.)
 
 
-== Prefix, infix, postfix and match operators <op-kinds>
+=== Common grammars
+
+A built-in grammar `parsely.common.arithmetic` is defined in #link(PUBLIC_SOURCE_URL + "/src/common.typ")[```text src/common.typ```].
+This grammar is good for basic algebraic expressions and should serve as a starting point for more complex grammars for specific domains.
+
+#example(```typ
+#let eq = $x = (-b plus.minus sqrt(b^2 - 4 a c))/(2a)$
+#let (tree, rest) = parsely.parse(eq, parsely.common.arithmetic)
+#parsely.render.waterfall(tree)
+```)
+
+If your application requires a common grammar which you believe should be included in {{PACKAGE_NAME}}, please contribute it by way of #link("https://github.com/Jollywatt/typst-parsely/issues")[GitHub Issue] or #link("https://github.com/Jollywatt/typst-parsely/pulls")[Pull Request]!
+
+
+== Declaring operators
+
+Operators correspond to the different entities that you want to parse.
+The values in a grammar dictionary define the operators, and each operator is defined by a dictionary of properties.
+The first key--value pair specify the operator's @op-kinds[kind] and @slots[pattern].
+Additionally, an operator can have any of the properties listed in @op-table.
+
+#[
+#let na = text(gray)[not applicable]
+#figure(table(
+  columns: (auto, 1fr),
+  stroke: none,
+  [Operator key], [Description],
+  table.hline(),
+
+  [(@op-kinds[kind])],
+  // [content or @slots[pattern]],
+  [For example, the operator `(infix: $+$, ..)` has the @op-kinds[kind] "`infix`" and the @slots[pattern] `$+$`. This must be first entry in the operator dictionary.],
+
+  `prec`,
+  // `number`,
+  [The @prec level. Has no effect for `match` operators.],
+
+  `assoc`,
+  // [`left`/`right`/`true`],
+  [@assoc[Associativity] for infix operators, ignored for other kinds.],
+
+  `guard`,
+  [A @op-guard[predicate function] to allow matching nodes conditionally depending on the values of slots. Must be a boolean function accepting a dictionary.],
+
+  `rewrite`,
+  [A @rewrite[rewrite rule] or function which takes the node which would be produced and transforms it before parsing continues.],
+
+  [(others)], [Any other fields are allowed and ignored.]
+), caption: [
+  Meanings of entries in an operator dictionary.
+]) <op-table>
+]
+
+
+=== Prefix, infix, postfix and match operators <op-kinds>
 
 An operator is specified as a dictionary whose first key is the *operator type* and first value is the *operator pattern*.
 For example, `(infix: $+$, ..)` is an operator of type _infix_ with pattern `$+$`.
@@ -411,44 +465,7 @@ All operators support @slots, possibly consuming tokens as _slot arguments_.
 
 
 
-=== Other operator fields
-
-In addition to its kind and pattern, an operator can have any of the keys in @op-table.
-
-#[
-#let na = text(gray)[not applicable]
-#figure(table(
-  columns: (auto, 1fr),
-  stroke: none,
-  [Operator key], [Description],
-  table.hline(),
-
-  [(@op-kinds[kind])],
-  // [content or @slots[pattern]],
-  [For example, the operator `(infix: $+$, ..)` has the @op-kinds[kind] "`infix`" and the @slots[pattern] `$+$`. This must be first entry in the operator dictionary.],
-
-  `prec`,
-  // `number`,
-  [The @prec level. Has no effect for `match` operators.],
-
-  `assoc`,
-  // [`left`/`right`/`true`],
-  [@assoc[Associativity] for infix operators, ignored for other kinds.],
-
-  `guard`,
-  [A @op-guard[predicate function] to allow matching nodes conditionally depending on the values of slots. Must be a boolean function accepting a dictionary.],
-
-  `rewrite`,
-  [A @rewrite[rewrite rule] or function which takes the node which would be produced and transforms it before parsing continues.],
-
-  [(others)], [Any other fields are allowed and ignored.]
-), caption: [
-  Meanings of entries of an operator dictionary.
-]) <op-table>
-]
-
-
-== Pattern matching and slots <slots>
+=== Pattern matching and slots <slots>
 
 Operator patterns are used to match sequences of tokens while parsing content.\
 Patterns can be:
@@ -472,16 +489,12 @@ Pattern matching is done by the function `parsely.match(pattern, expr)`, which r
 Slots are wildcard tokens that match content in several ways:
 
 - `slot(name)` matches any single token.
-
 - `slot(name, many: true, greedy: bool)` @slot-many[matches any sequence].
-
 - `slot(name, any: array)` @slot-any[matches any one of a set of patterns].
-
 - `slot(name, guard: function)` @slot-guard[matches a token conditionally].
-
 - The special patterns `parsely.tight` and `parsely.loose` allow @tight-loose[matching whitespace].
 
-=== Matching sequences greedily or lazily <slot-many>
+==== Matching sequences greedily or lazily <slot-many>
 
 A slot such as `slot("rhs")` will match a single token, but *multiple tokens* can be matched with `slot("rhs", many: true)` or `slot("rhs*")` for short.
 
@@ -498,7 +511,7 @@ Conversely, *lazy* slots such as `slot("name*", greedy: false)` or `slot("name*?
 - #parsely.match($slot("lazy*?"),  slot("rest*")$, $alpha, beta, gamma$)
 ```)
 
-=== Matching any pattern in a union <slot-any>
+==== Matching any pattern in a union <slot-any>
 
 Slots with an "`any`" argument containing an array of sub-patterns only match one of those patterns (in the order they are given).
 
@@ -512,7 +525,7 @@ comp: (infix: slot("op", any: ($=$, $!=$, $<$, $>$, $<=$, $>=$)))
   All comparison tokens are parsed as the `"comp"` operator tagged by an `"op"` slot.
 ])
 
-=== Matching conditionally (slot guards) <slot-guard>
+==== Matching conditionally (slot guards) <slot-guard>
 
 Slots can be made conditional by supplying a boolean predicate in the "`guard`" argument.
 This is a function accepting the slot's matched content and returning a boolean.
@@ -528,7 +541,7 @@ text: (match: slot("it", guard: it => it.func() == text)),
 ))
 
 
-=== Matching whitespace tightly or loosely <tight-loose>
+==== Matching whitespace tightly or loosely <tight-loose>
 
 The presence of whitespace in equations is not always visible (for example, `$f(x)$` and #box[`$f (x)$`] are rendered identically) and whitespace is usually ignored when pattern matching.
 However, the presence or lack of whitespace between tokens can be explicitly matched with the special `parsely.tight` and `parsely.loose` patterns.
@@ -542,7 +555,7 @@ For example, you can write a pattern that matches `$k!$` but not `$k !$` by usin
 #parsely.match($slot("a") tight !$, $A !$)  // no match (too loose)
 #parsely.match($slot("a") loose !$, $A!$)   // no match (too tight)
 ```)
-This can be useful to disambiguate function application `$f(x, y)$` from implicit multiplication, `$x^2 (1 - x)$`, for example.
+This can be useful to disambiguate function application `$f(x, y)$` from implicit multiplication, `$x (1 - y)$`, for example.
 
 #grammar-examples(```typc
   fact:   (postfix: $tight !$, prec: 3),
@@ -569,7 +582,7 @@ This can be useful to disambiguate function application `$f(x, y)$` from implici
 
 // #pagebreak()
 
-== Operator precedence <prec>
+=== Operator precedence <prec>
 
 Operators which consume positional arguments (`prefix`, `infix` or `postfix` operators) have an optional precedence specified by a `prec` key which controls how tightly they bind to operands (neighbouring non-whitespace tokens).
 The default precedence is zero.
@@ -615,7 +628,7 @@ This allows summation notation "$sum_#`var` #`body`$" to be parsed as a prefix o
 
 
 // #pagebreak()
-== Associativity of infix operators <assoc>
+=== Associativity of infix operators <assoc>
 
 Infix operators additionally have an associativity specified by an `assoc` key which applies when the same operator appears in a sequence.
 Possible values are `left` (default), `right` and `true`, for left/right associativity and true associativity (meaning the operator merges with itself and collects multiple arguments) respectively.
@@ -632,6 +645,69 @@ Possible values are `left` (default), `right` and `true`, for left/right associa
   ),
   styler: bracket-styler,
 )
+
+
+=== Operator predicates (operator guards) <op-guard>
+
+Similar to @slot-guard[slot guards], operators can be given guards which match depending on all the matched slots.
+Guards can be specified by adding a `guard` entry to the operator dictionary.
+The predicate function for a slot guard receives a dictionary of all slots as its only argument.
+
+@example-op-guard shows how you can use an operator guard to match integrals conditionally if neither of the limits contain the string `"∞"`.
+
+#grammar-examples(```typ
+definite-integral: (
+  prefix: $integral_slot("lo")^slot("hi")$,
+  guard: slots => {
+    not slots.values().any(it => "∞" in parsely.stringify(it))
+  }
+),
+integral: (prefix: $integral_slot("lo")^slot("hi")$),
+neg: (prefix: $-$, prec: 2),
+mul: (infix: $$, prec: 2, assoc: true), // must be before dif
+dif: (prefix: $dif$, prec: 3),
+```, (
+  $integral_0^1 u dif u$,
+  $integral_0^oo e^(-x^2) dif x$,
+  $integral_0^t e^(-x^2) dif x$,
+  $integral_(-oo)^t f(tau) dif tau$,
+), caption: [
+  Using operator guards to only match integrals that don't have "$oo$"
+ in the limits.
+]) <example-op-guard>
+
+
+=== Operator rewrite rules <rewrite>
+
+Operator rewriting is an advanced feature which is sometimes necessary when the desired syntax tree has a sufficiently different topology from the content tree emitted by Typst.
+For example, correctly @parsing-attach requires a rewrite rule.
+
+An operator rewrite rule is a function which transforms a node immediately after the operator is matched but before its children are parsed.
+Rewrite rules can be specified by adding a `rewrite` entry to the operator dictionary.
+The rewrite rule function receives a node dictionary whose `args` and `slots` are yet to be parsed.
+The rule may return a node, in which case parsing continues normally on any child nodes.
+
+Be aware that parsing with rewrite rules is prone to infinite recursion if the rule returns unparsed content which itself matches the operator.
+
+@rewrite-example shows how a rewrite rule can be used to convert slots arguments into named arguments.
+#grammar-examples(```typ
+add: (infix: $+$),
+slot-pair: (
+  match: ${slot("left*"), slot("right*")}$,
+),
+arg-pair: (
+  match: $[slot("left*"), slot("right*")]$,
+  rewrite: ((head, args, slots)) => {
+    (head: head, args: (slots.left, slots.right), slots: (:))
+  }
+)
+```, (
+  ${A, B + C}$,
+  $[A + B, C]$,
+), caption: [
+  Using an operator rewrite rule to convert slot a
+]) <rewrite-example>
+
 
 == How trees are represented <trees>
 
@@ -674,67 +750,6 @@ See the source code of the @examples for many different examples of syntax tree 
 
 
 
-
-== Operator rewriting and operator guards
-
-Advanced uses of operators involve guard predicates and rewrite rules, which are both functions that may be supplied to operator dictionaries with a `guard` or `rewrite` key.
-
-=== Operator predicates <op-guard>
-
-Similar to @slot-guard[slot guards], operators can be given guards which match depending on all the matched slots.
-Guards can be specified by adding a `guard` entry to the operator dictionary.
-The predicate function for a slot guard receives a dictionary of all slots as its only argument.
-
-@example-op-guard shows how you can use an operator guard to match integrals conditionally if neither of the limits contain the string `"∞"`.
-
-#grammar-examples(```typ
-definite-integral: (
-  prefix: $integral_slot("lo")^slot("hi")$,
-  guard: slots => {
-    not slots.values().any(it => "∞" in parsely.stringify(it))
-  }
-),
-integral: (prefix: $integral_slot("lo")^slot("hi")$),
-neg: (prefix: $-$, prec: 2),
-mul: (infix: $$, prec: 2, assoc: true), // must be before dif
-dif: (prefix: $dif$, prec: 3),
-```, (
-  $integral_0^1 u dif u$,
-  $integral_0^oo e^(-x^2) dif x$,
-  $integral_0^t e^(-x^2) dif x$,
-  $integral_(-oo)^t f(tau) dif tau$,
-), caption: [
-  Using operator guards to only match integrals that don't have "$oo$"
- in the limits.
-]) <example-op-guard>
-
-
-=== Rewrite rules <rewrite>
-
-An operator rewrite rule is a function which transforms a node immediately after an operator is matched but before its children are parsed.
-Rewrite rules can be specified by adding a `rewrite` entry to the operator dictionary.
-The rewrite rule function receives a node as its only argument and may return the same node (performing no rewrite) or any other node tree.
-
-#grammar-examples(```typ
-add: (infix: $+$),
-slot-pair: (
-  match: ${slot("left*"), slot("right*")}$,
-),
-arg-pair: (
-  match: $[slot("left*"), slot("right*")]$,
-  rewrite: ((head, args, slots)) => {
-    (head: head, args: (slots.left, slots.right), slots: (:))
-  }
-)
-```, (
-  ${A, B + C}$,
-  $[A + B, C]$,
-), caption: [
-  Using an operator rewrite rule to convert slot a
-])
-
-Rewrite rules may be helpful when the content tree which you want to parse has a sufficiently different topology to the desired syntax tree.
-For example, correctly @parsing-attach involves a rewrite rule.
 
 
 
