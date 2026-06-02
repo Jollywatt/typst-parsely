@@ -98,7 +98,7 @@
           text(hash-color(key), raw(key)) + raw(l.slice(i)) + "\n"
         }
       }
-      emph[Operators in grammar] 
+      emph[Operators in grammar]
       par(it)
     }),
     frame({
@@ -171,8 +171,8 @@
     }
     (head: it.head, args: args, slots: (:))
   }, leaf: math.equation)
-  
-  
+
+
   let lisp-figure = util.walk(array-tree, post: it => {
       set text(14pt)
       let c = hash-color(it.head)
@@ -231,7 +231,7 @@
 
 
 #show heading: it => context {
-  it 
+  it
 
   let parent = query(selector(heading)
     .before(here()))
@@ -300,7 +300,7 @@
   ```, scope: (grammar: grammar))
 
   This returns a syntax tree along with any trailing tokens that failed to parse (if any).
-  
+
 + Use `parsely.walk()` or `parsely.render()` to visit nodes and turn them into content.
 
   #example(```typ
@@ -326,7 +326,9 @@
   text(tint.darken(40%), emph[Source code: #link(url, raw(path, lang: none))])
   v(-2em)
 
-  include path
+  let src = read(path)
+    .replace("#import \"@preview/parsely", "//")
+  eval(src, mode: "markup", scope: (parsely: parsely))
 }
 
 #pagebreak()
@@ -786,7 +788,7 @@ Additionally, they should occur #highlight[before match operators], otherwise tr
 #grammar-examples(```typ
 add: (infix: $+$, prec: 1),
 mul: (infix: $times$, prec: 2),  // "juxt" must be after this
-juxt: (infix: none, assoc: true, prec: 2), 
+juxt: (infix: none, assoc: true, prec: 2),
 grp: (match: $(slot("body*"))$), // "juxt" must be before this
 ```, (
   $1 + a b times c$,
@@ -877,7 +879,7 @@ which ensures that `pow` only applies to `math.attach` elements which have a sup
     ")"
   })
   #label(fn.name)
-  
+
 
   #let i = fn.description.position(regex("\n\s*\n"),)
   #if i == none { i = 0 }
