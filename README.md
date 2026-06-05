@@ -2,7 +2,7 @@
 
 _Parse equations with Typst_.
 
-[![Package manual (PDF)](https://img.shields.io/badge/dev-manual.pdf-orange)](https://github.com/Jollywatt/typst-parsely/releases/download/latest/manual.pdf)
+[![Package manual (PDF)](https://img.shields.io/badge/v0.1.1-manual.pdf-green)](./docs/manual.pdf)
 
 _Parsely_ provides tools to parse Typst equations into structured syntax trees using user-specified grammars.
 
@@ -11,7 +11,7 @@ Supports prefix/infix/postfix operators, precedence, associativity and recursive
 
 ## Usage examples
 
-Self-contained usage examples can be found in [the manual](https://github.com/Jollywatt/typst-parsely/releases/download/latest/manual.pdf):
+Self-contained usage examples can be found in [the manual](./docs/manual.pdf):
 - drawing expression trees from equations (using [CeTZ](https://cetz-package.github.io/))
 - performing engineering calculations with units (using [Pariman](https://github.com/pacaunt/pariman))
 - turning equations into functions for plotting (using [Lilaq](https://lilaq.org))
@@ -20,7 +20,7 @@ Self-contained usage examples can be found in [the manual](https://github.com/Jo
 ## Minimal example
 
 ```typ
-#import "@preview/parsely:{{VERSION}}"
+#import "@preview/parsely:0.1.1"
 ```
 
 From the equation `$A x + b$` obtain the abstract syntax tree
