@@ -2,6 +2,7 @@
 import argparse
 from pathlib import Path
 import tomli
+import subprocess
 
 
 def get_version(toml_path):
@@ -22,6 +23,18 @@ def update_readme(readme_path, version):
         f.write(md)
 
     print(f"Updated {readme_path.name}")
+
+def compile_manual(source_url):
+  subprocess.run([
+    "typst",
+    "compile",
+    "../docs/manual.typ",
+    "--input", f"source-url={source_url}",
+    "--root", ".."
+  ])
+
+  print(f"Compiled manual with links to {source_url}")
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -46,6 +59,10 @@ def main():
     readme_path = root / 'README.md'
     assert readme_path.exists(), f"README not found at {readme_path}"
     update_readme(readme_path, version)
+
+    source_url = f"https://github.com/Jollywatt/typst-parsely/blob/v{version}"
+    compile_manual(source_url)
+
 
 if __name__ == '__main__':
     main()
