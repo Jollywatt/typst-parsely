@@ -1,5 +1,5 @@
 #import "@preview/parsely:0.1.1"
-#import "@preview/cetz:0.4.2"
+#import "@preview/cetz:0.5.2"
 
 #show "CeTZ": link.with("https://cetz-package.github.io/")
 
@@ -26,8 +26,8 @@ You can transform Parsely's syntax trees from their dictionary form into array f
   let (tree, rest) = parsely.parse(eqn, parsely.common.arithmetic)
 
   let array-tree = parsely.walk(tree, post: it => (
-    strong(raw(it.head)), 
-    ..it.args, 
+    strong(raw(it.head)),
+    ..it.args,
     ..it.slots.pairs().map(((slot, it)) => {
       // convert slots into unary nodes
       (text(gray, 0.8em, raw(slot)), it)
@@ -42,12 +42,12 @@ You can transform Parsely's syntax trees from their dictionary form into array f
     cetz.tree.tree(
       array-tree,
       grow: 0.5, spread: 0.15,
-      draw-edge: (src, tgt, parent, child) => {
+      draw-edge: (src, tgt) => {
         cetz.draw.bezier(
-          (name: src, anchor: "south"),
-          (name: tgt, anchor: "north"),
-          (tgt, 60%, (tgt, "|-", src)),
-          stroke: 2pt/(1 + parent.depth/3)
+          (name: src.group-name, anchor: "south"),
+          (name: tgt.group-name, anchor: "north"),
+          (tgt.name, 60%, (tgt.name, "|-", src.name)),
+          stroke: 2pt/(1 + tgt.depth/3)
         )
       }
     )

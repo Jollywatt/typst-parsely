@@ -1,6 +1,6 @@
 #import "@preview/parsely:0.1.1"
-#import "@preview/cetz:0.4.2"
-#import "@preview/cetz-venn:0.1.4"
+#import "@preview/cetz:0.5.2"
+#import "@preview/cetz-venn:0.2.0"
 
 #show "CeTZ": link.with("https://cetz-package.github.io/")
 
@@ -71,7 +71,7 @@ By testing on various inputs, you can then use the closure to plot Venn diagrams
     let on = callback(symbols.zip(args.pos()).to-dict())
     if on { yellow } else { white }
   }
-  
+
   cetz.canvas(length: 4mm, {
     cetz.draw.set-style(venn: (padding: 0.4),)
 

@@ -1,5 +1,5 @@
 #import "@preview/parsely:0.1.1"
-#import "@preview/lilaq:0.5.0" as lq
+#import "@preview/lilaq:0.6.0" as lq
 
 #show "Lilaq": link.with("https://lilaq.org")
 
@@ -70,14 +70,14 @@ For example, #eqns.map(math.equation.with(block: false)).join(last: [ and ])[, ]
 
 #let x = lq.linspace(-5, 5, num: 200)
 #let plot = lq.diagram(
-  xlabel: $x$, 
+  xlabel: $x$,
   ylabel: $f(x)$,
   legend: (position: top + left),
   width: 100%,
   ..eqns.map(eqn => {
     let fn = eqn-to-func(eqn)
     lq.plot(
-      x, x => fn((x: x)), 
+      x, x => fn((x: x)),
       mark: none,
       label: eqn
     )

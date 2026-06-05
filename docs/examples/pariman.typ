@@ -1,9 +1,9 @@
 #import "@preview/parsely:0.1.1"
-#import "@preview/pariman:0.2.1": *
+#import "@preview/pariman:0.2.2": *
 
 #show "Pariman": link("https://github.com/pacaunt/pariman")[Pariman]
 
-= Evaluating dimensionful quantities with Pariman 
+= Evaluating dimensionful quantities with Pariman
 
 You can parse equations with Parsely and evaluate them with Pariman by writing a tree post-walk which converts each leaf into a `pariman.quantity` and evaluates nodes using `pariman.calculation` functions.
 
