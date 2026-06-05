@@ -6,9 +6,12 @@
 
 = Evaluating Boolean formulae <venn>
 
-This example demonstrates how equations may be evaluated by converting them into anonymous functions which can be evaluated by passing a dictionary defining the equation's unknowns.
-We then use this to parse Boolean formulae and plot them using CeTZ and its `cetz-venn` library.
+This example demonstrates how equations may be evaluated by parsing them and then converting the syntax tree into anonymous functions, which we can call with dictionary defining the equation's unknowns.
 
+We define a simple grammar to parse Boolean operators which also defines how the operators are evaluated. For example, the `and` operator dictionary `(infix: $and$, prec: 2, eval: (a, b) => a and b)` has an `eval` field.
+We evaluate and then plot the results of various formulae using CeTZ and its `cetz-venn` library.
+
+After parsing, we perform a tree walk to transform the syntax tree into a callable function.
 First, leaf nodes are transformed into anonymous functions accepting a dictionary of values.
 For example, the leaf node "$A$" is mapped to `scope => scope.at("A")`.
 

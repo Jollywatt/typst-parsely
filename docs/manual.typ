@@ -339,8 +339,11 @@ Each section is a standalone example file which may be found at
 #{let u = PUBLIC_SOURCE_URL + "/docs/examples"; link(u, u)}.
 
 #example-file("examples/trees.typ", orange)
+#pagebreak()
 #example-file("examples/venn.typ", yellow)
+#pagebreak()
 #example-file("examples/calc.typ", blue)
+#pagebreak()
 #example-file("examples/pariman.typ", green)
 
 

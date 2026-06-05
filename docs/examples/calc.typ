@@ -86,10 +86,20 @@ For example, #eqns.map(math.equation.with(block: false)).join(last: [ and ])[, ]
 
 #figure(plot)
 
-To convert to an anonymous function from the syntax tree, leaf nodes like $4.5$, $pi$ or $cos$ are first mapped to anonymous functions returning a value like `s => eval("4.5")`, `s => calc.pi` or `s => calc.cos` (yes, in the last case a function is returned as the value).
+First, an equation is parsed using the built-in `parsely.common.arithmetic` grammar, resulting in a syntax tree.
+To convert the tree into an anonymous function, leaf nodes like $4.5$, $pi$ or $cos$ are first mapped to anonymous functions which return a constant like `s => eval("4.5")`, `s => calc.pi` or `s => calc.cos` (yes, in the last case a function is returned as the value).
 
 Then, nodes are also converted into anonymous functions which accept a scope dictionary and return a value.
-For example, $x + y$ becomes `s => args.first()(s) + args.last()(s)`
+For example, $x + y$ becomes
+```
+s => args.first()(s) + args.last()(s)
+```
 where `args.first()` is `s => s.at("x")`.
-Function application $cos(x)$ becomes `s => (slots.op)(s)((slots.args)(s))`, where the value of `slots.op(s)` is the actual function `calc.cos`.
-If this is hard to follow, don't worry; look at the code.
+
+Function application such as $cos(x)$ becomes
+```
+s => (slots.op)(s)((slots.args)(s))
+```
+where the value of `slots.op(s)` is the actual function `calc.cos`.
+
+This might be hard to follow, but don't worry; look at the code.
