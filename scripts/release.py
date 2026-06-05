@@ -17,7 +17,9 @@ def update_readme(readme_path, version):
 
     md = md.replace('{{VERSION}}', version)
     md = md.replace('badge/dev-manual.pdf-orange', f'badge/v{version}-manual.pdf-green')
-    md = md.replace('/releases/download/latest/', f'/releases/download/v{version}/')
+
+    # when hosted on Universe, use relative links
+    md = md.replace('https://github.com/Jollywatt/typst-parsely/releases/download/latest/manual.pdf', './docs/manual.pdf')
 
     with open(readme_path, 'w') as f:
         f.write(md)
